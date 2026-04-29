@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" data-lang="en">
+<html lang="ko" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,490 +7,630 @@
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <style>
 :root{--bg:#0d1117;--card:#161b22;--text:#c9d1d9;--accent:#58a6ff;--accent2:#f78166;--border:#30363d;--green:#3fb950;--red:#f85149;--dim:#8b949e}
-[data-theme="light"]{--bg:#fff;--card:#f6f8fa;--text:#24292f;--accent:#0969da;--accent2:#cf222e;--border:#d0d7de;--green:#1a7f37;--red:#cf222e;--dim:#656d76}
+[data-theme="light"]{--bg:#ffffff;--card:#f6f8fa;--text:#24292f;--accent:#0969da;--accent2:#cf222e;--border:#d0d7de;--green:#1a7f37;--red:#cf222e;--dim:#656d76}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-.hdr{background:var(--card);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.hdr{background:var(--card);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:8px}
 .hdr h1{font-size:15px;font-weight:600}.hdr h1 span{color:var(--accent)}
-.tgl{display:flex;gap:6px}
-.btn{background:var(--border);color:var(--text);border:none;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:500}
+.tgl{display:flex;gap:6px;flex-wrap:wrap}
+.btn{background:var(--border);color:var(--text);border:none;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:500;white-space:nowrap}
 .btn:hover{background:var(--accent);color:#fff}
 .btn-p{background:var(--green);color:#fff}
+.btn-p:hover{background:#2ea043}
+.btn-r{background:var(--accent);color:#fff}
+.btn-r:hover{background:#1f6feb}
 .main{max-width:1400px;margin:0 auto;padding:12px;display:grid;grid-template-columns:280px 1fr;gap:12px}
 @media(max-width:900px){.main{grid-template-columns:1fr}}
 .side{display:flex;flex-direction:column;gap:10px}
-.pnl{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px}
+.pnl{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:12px}
 .pnl h3{font-size:11px;font-weight:600;margin-bottom:8px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px}
-.pnl p{font-size:10px;color:var(--dim);line-height:1.4;margin-bottom:6px}
 .stat{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:10px}
-.stat-item{background:var(--bg);padding:4px 6px;border-radius:3px}
-.stat-item label{color:var(--dim);font-size:9px}
-.stat-item .val{font-weight:700;color:var(--accent2);font-family:monospace;font-size:12px}
+.stat-item{background:var(--bg);padding:6px 8px;border-radius:4px}
+.stat-item label{color:var(--dim);font-size:9px;display:block}
+.stat-item .val{font-weight:700;color:var(--accent2);font-family:'SF Mono',monospace;font-size:12px}
 .content{display:flex;flex-direction:column;gap:10px}
 .viz{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:1100px){.viz{grid-template-columns:1fr}}
-.pc{background:var(--card);border:1px solid var(--border);border-radius:6px;overflow:hidden}
-.pc h4{font-size:10px;font-weight:600;padding:6px 10px;border-bottom:1px solid var(--border);color:var(--accent);text-transform:uppercase;letter-spacing:.4px}
+.pc{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.pc h4{font-size:10px;font-weight:600;padding:8px 12px;border-bottom:1px solid var(--border);color:var(--accent);text-transform:uppercase;letter-spacing:.4px}
 select{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:11px;width:100%;margin-bottom:6px}
-.pal-row{display:flex;gap:4px;margin-bottom:6px}
-.pal-swatch{width:24px;height:16px;border-radius:2px;cursor:pointer;border:2px solid transparent}
-.pal-swatch.active{border-color:var(--accent)}
-.file-area{border:2px dashed var(--border);border-radius:6px;padding:16px;text-align:center;cursor:pointer;font-size:11px;color:var(--dim);transition:border-color .2s}
+.file-area{border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;cursor:pointer;font-size:11px;color:var(--dim);transition:border-color .2s}
 .file-area:hover{border-color:var(--accent)}
+.file-area p{line-height:1.5}
+.loading{text-align:center;padding:20px;color:var(--accent);font-size:12px}
+.spec-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:11px;border-bottom:1px solid var(--border)}
+.spec-row:last-child{border:none}
+.badge{padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700}
+.badge-pass{background:rgba(63,185,80,.15);color:var(--green)}
+.badge-fail{background:rgba(248,81,73,.15);color:var(--red)}
+.analysis-box{background:var(--bg);border-radius:6px;padding:10px;margin-top:8px;font-size:10px;line-height:1.6}
+.analysis-box h5{color:var(--accent);margin-bottom:4px;font-size:10px}
 </style>
 </head>
 <body>
 <div class="hdr">
-  <h1><span>&#x1F4CA;</span> <span data-i18n="title">OLED Viewing Angle Analyzer</span></h1>
+  <h1><span>&#x1F4CA;</span> OLED Viewing Angle Analyzer</h1>
   <div class="tgl">
-    <button class="btn" onclick="toggleLang()" id="langBtn">한국어</button>
+    <button class="btn" onclick="toggleLang()" id="langBtn">English</button>
     <button class="btn" onclick="toggleTheme()" id="themeBtn">&#x2600; Light</button>
     <button class="btn" onclick="exportCSV()">&#x2B07; CSV</button>
+    <button class="btn btn-r" onclick="exportReport()">&#x1F4C4; Full Report</button>
   </div>
 </div>
 <div class="main">
 <div class="side">
   <div class="pnl">
-    <h3 data-i18n="data">Data Source</h3>
+    <h3 id="lData">데이터 소스</h3>
     <div class="file-area" id="dropZone" onclick="document.getElementById('fileIn').click()">
-      <p data-i18n="drop">Drop CSV or click to upload<br><span style="font-size:9px">phi, theta, Y, x, y</span></p>
-      <input type="file" id="fileIn" accept=".csv,.txt" style="display:none" onchange="loadFile(event)">
+      <p id="lDrop">CSV 파일을 드래그하거나 클릭<br><span style="font-size:9px">Phi, Theta, Y, x, y (탭/콤마 구분)</span></p>
+      <input type="file" id="fileIn" accept=".csv,.txt,.tsv" style="display:none" onchange="loadFile(event)">
     </div>
-    <button class="btn btn-p" style="width:100%;margin-top:6px" onclick="useSample()" data-i18n="sample">Load Sample Data</button>
-    <button class="btn" style="width:100%;margin-top:4px" onclick="resetAll()" data-i18n="reset">Reset</button>
+    <button class="btn btn-p" style="width:100%;margin-top:6px" onclick="loadRemoteCSV()" id="lLoad">GitHub data.csv 로드</button>
+    <button class="btn" style="width:100%;margin-top:4px" onclick="useSample()" id="lSample">샘플 데이터</button>
   </div>
   <div class="pnl">
-    <h3 data-i18n="palette">Color Palette</h3>
-    <div class="pal-row" id="palRow"></div>
+    <h3 id="lFilter">필터</h3>
     <select id="phiSel" onchange="replot()"></select>
   </div>
   <div class="pnl">
-    <h3 data-i18n="stats">Statistics (Front → 60°)</h3>
+    <h3 id="lStats">통계 요약</h3>
     <div class="stat" id="statBox">
       <div class="stat-item"><label>Max Δu'v'</label><div class="val" id="sMaxDuv">—</div></div>
       <div class="stat-item"><label>Avg Δu'v'</label><div class="val" id="sAvgDuv">—</div></div>
       <div class="stat-item"><label>Y drop @60°</label><div class="val" id="sYdrop">—</div></div>
-      <div class="stat-item"><label>Max shift φ</label><div class="val" id="sMaxPhi">—</div></div>
+      <div class="stat-item"><label>Worst φ</label><div class="val" id="sMaxPhi">—</div></div>
       <div class="stat-item"><label>Δx range</label><div class="val" id="sDxRange">—</div></div>
       <div class="stat-item"><label>Δy range</label><div class="val" id="sDyRange">—</div></div>
     </div>
   </div>
   <div class="pnl">
-    <h3 data-i18n="spec">Spec Compliance</h3>
-    <div id="specBox" style="font-size:10px">
-      <p>Δu'v' < 0.02 @ 45°: <span id="spec1" style="font-weight:700">—</span></p>
-      <p>Δu'v' < 0.04 @ 60°: <span id="spec2" style="font-weight:700">—</span></p>
-      <p>Y ratio > 50% @ 60°: <span id="spec3" style="font-weight:700">—</span></p>
-    </div>
+    <h3 id="lSpec">스펙 판정</h3>
+    <div id="specBox"></div>
+    <div class="analysis-box" id="analysisBox"></div>
   </div>
 </div>
 <div class="content">
   <div class="viz">
-    <div class="pc"><h4 data-i18n="p1">Δu'v' vs θ (All Azimuths)</h4><div id="plot1" style="height:280px"></div></div>
-    <div class="pc"><h4 data-i18n="p2">CIE u'v' Chromaticity Shift</h4><div id="plot2" style="height:280px"></div></div>
-    <div class="pc"><h4 data-i18n="p3">Luminance Roll-off</h4><div id="plot3" style="height:280px"></div></div>
-    <div class="pc"><h4 data-i18n="p4">Δu'v' Polar Map</h4><div id="plot4" style="height:280px"></div></div>
+    <div class="pc"><h4>Δu'v' vs Viewing Angle (θ)</h4><div id="plot1" style="height:300px"></div></div>
+    <div class="pc"><h4>Luminance (Y/Y₀) vs θ</h4><div id="plot2" style="height:300px"></div></div>
   </div>
   <div class="viz">
-    <div class="pc"><h4 data-i18n="p5">Δx, Δy vs θ</h4><div id="plot5" style="height:250px"></div></div>
-    <div class="pc"><h4 data-i18n="p6">Color Shift Direction</h4><div id="plot6" style="height:250px"></div></div>
+    <div class="pc"><h4>CIE u'v' Chromaticity Shift</h4><div id="plot3" style="height:300px"></div></div>
+    <div class="pc"><h4>CIE x, y vs θ</h4><div id="plot4" style="height:300px"></div></div>
   </div>
-  <!-- 3D Section -->
   <div class="viz">
-    <div class="pc"><h4>3D Δu'v' Surface (θ × φ)</h4>
-      <select id="metric3d" onchange="replot3d()" style="margin:4px 8px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:2px 6px;font-size:10px">
+    <div class="pc"><h4>Δx, Δy vs θ</h4><div id="plot5" style="height:280px"></div></div>
+    <div class="pc"><h4>Δu'v' Polar Map (Max per φ)</h4><div id="plot6" style="height:280px"></div></div>
+  </div>
+  <div class="viz">
+    <div class="pc"><h4>3D Δu'v' Surface
+      <select id="metric3d" onchange="replot3d()" style="float:right;width:auto;margin:-2px 4px 0 0;font-size:9px;padding:2px 4px">
         <option value="duv">Δu'v'</option><option value="du">Δu'</option><option value="dv">Δv'</option>
-        <option value="Yrel">Y/Y₀</option><option value="dYpct">ΔY%</option>
-      </select>
-      <div id="plot3d" style="height:350px"></div>
+        <option value="Yrel">Y/Y₀</option>
+      </select></h4>
+      <div id="plot3d" style="height:380px"></div>
     </div>
-    <div class="pc"><h4>Polar Heatmap (Δu'v')</h4><div id="plotPolar2d" style="height:350px"></div></div>
+    <div class="pc"><h4>Normalized Luminance (Y/Y₀)</h4><div id="plot7" style="height:380px"></div></div>
   </div>
-  <!-- Summary Table -->
-  <div class="pc" style="grid-column:1/-1" id="summarySection">
-    <h4 data-i18n="summary">θ-wise Summary Statistics</h4>
-    <div style="overflow-x:auto;font-size:10px;font-family:monospace" id="summaryTable"></div>
-  </div>
-  <!-- Report Export -->
-  <div style="text-align:center;margin:8px 0">
-    <button class="btn btn-p" onclick="exportReport()" style="padding:8px 20px;font-size:12px" data-i18n="report">📄 Export Standalone HTML Report</button>
+  <div class="pc" style="grid-column:1/-1">
+    <h4 id="lSummary">θ별 요약 통계</h4>
+    <div style="overflow-x:auto;font-size:10px;font-family:'SF Mono',monospace" id="summaryTable"></div>
   </div>
 </div>
 </div>
 
 <script>
-const PHIS=[0,45,90,135,180,225,270,315];
-const THETAS=Array.from({length:61},(_,i)=>i);
-const PALETTES={
-  thermal:['#001428','#2646A0','#32A0D2','#F5DC50','#DC2D23'],
-  viridis:['#440154','#3B528B','#21918C','#5EC962','#FDE725'],
-  blueRed:['#2563EB','#E2E8F0','#DC2626'],
-  coolwarm:['#3B4CC0','#DDDDDD','#B40426']
+const PHI_COLORS = {
+  0:'#58a6ff', 45:'#f78166', 90:'#3fb950', 135:'#d2a8ff',
+  180:'#f0883e', 225:'#a5d6ff', 270:'#ff7b72', 315:'#7ee787'
 };
-const PHI_COLORS=['#58a6ff','#f78166','#3fb950','#d2a8ff','#f0883e','#a5d6ff','#ff7b72','#7ee787'];
-let DATA=[], PROCESSED=[], currentPalette='thermal';
+let DATA=[], PROCESSED=[], LANG='ko';
 
-const i18n={
-  en:{title:"OLED Viewing Angle Analyzer",data:"Data Source",drop:"Drop CSV or click to upload",
-    sample:"Load Sample Data",reset:"Reset",palette:"Color Palette",stats:"Statistics (Front → 60°)",
-    spec:"Spec Compliance",p1:"Δu'v' vs θ (All Azimuths)",p2:"CIE u'v' Chromaticity Shift",
-    p3:"Luminance Roll-off",p4:"Δu'v' Polar Map",p5:"Δx, Δy vs θ",p6:"Color Shift Direction"},
-  ko:{title:"OLED 시야각 색좌표 분석기",data:"데이터 소스",drop:"CSV 파일을 드래그하거나 클릭",
-    sample:"샘플 데이터 로드",reset:"초기화",palette:"색상 팔레트",stats:"통계 (정면 → 60°)",
-    spec:"스펙 준수 여부",p1:"Δu'v' vs θ (전 방위)",p2:"CIE u'v' 색좌표 이동",
-    p3:"휘도 감쇠",p4:"Δu'v' 극좌표",p5:"Δx, Δy vs θ",p6:"색 이동 방향"}
+// ── i18n ──
+const i18n = {
+  ko:{lData:'데이터 소스',lDrop:'CSV 파일을 드래그하거나 클릭',lLoad:'GitHub data.csv 로드',
+      lSample:'샘플 데이터',lFilter:'필터',lStats:'통계 요약',lSpec:'스펙 판정',lSummary:'θ별 요약 통계',
+      langBtn:'English',all:'전체 방위각'},
+  en:{lData:'Data Source',lDrop:'Drop CSV or click to upload',lLoad:'Load GitHub data.csv',
+      lSample:'Sample Data',lFilter:'Filter',lStats:'Statistics',lSpec:'Spec Compliance',lSummary:'Summary by θ',
+      langBtn:'한국어',all:'All Azimuths'}
 };
-
 function toggleLang(){
-  const h=document.documentElement,l=h.dataset.lang==='en'?'ko':'en';
-  h.dataset.lang=l;document.getElementById('langBtn').textContent=l==='en'?'한국어':'English';
-  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(i18n[l][k])el.textContent=i18n[l][k]});
+  LANG = LANG==='ko'?'en':'ko';
+  Object.entries(i18n[LANG]).forEach(([id,txt])=>{const el=document.getElementById(id);if(el)el.textContent=txt});
+  if(PROCESSED.length) replot();
 }
 function toggleTheme(){
-  const h=document.documentElement,t=h.dataset.theme==='dark'?'light':'dark';
-  h.dataset.theme=t;document.getElementById('themeBtn').innerHTML=t==='dark'?'&#x2600; Light':'&#x1F319; Dark';
-  if(PROCESSED.length)replot();
+  const h=document.documentElement, t=h.dataset.theme==='dark'?'light':'dark';
+  h.dataset.theme=t;
+  document.getElementById('themeBtn').innerHTML = t==='dark'?'&#x2600; Light':'&#x1F319; Dark';
+  if(PROCESSED.length) replot();
 }
 
-function generateSample(){
-  const rows=[];
-  for(const phi of PHIS){
-    const rad=phi*Math.PI/180;
-    for(const theta of THETAS){
-      const t=theta/60,tc=t**1.65;
-      const dx=.0015*tc+.0065*tc*Math.cos(rad+.6)+Math.cos(rad)*.0006*t;
-      const dy=-.001*tc+.005*tc*Math.sin(rad-.4)+Math.sin(rad)*.0005*t;
-      const yRoll=1-.34*t**1.35-.04*Math.cos(rad-Math.PI/5)*t**1.2;
-      rows.push({phi,theta,Y:+(500*yRoll).toFixed(3),x:+(.305+dx).toFixed(6),y:+(.322+dy).toFixed(6)});
-    }
-  }
-  return rows;
+// ── CSV Parsing ──
+function parseCSV(text){
+  const lines = text.trim().split(/\r?\n/).filter(Boolean);
+  const delim = lines[0].includes('\t') ? '\t' : lines[0].includes(';') ? ';' : ',';
+  const hdr = lines[0].split(delim).map(h=>h.trim().toLowerCase());
+
+  // Find column indices
+  let iPhi=-1, iTheta=-1, iY=-1, ix=-1, iy=-1;
+  hdr.forEach((h,idx)=>{
+    if(h==='phi') iPhi=idx;
+    else if(h==='theta') iTheta=idx;
+    else if(h==='x') ix=idx;
+    else if(h==='y' && iy>=0) {} // skip duplicate
+    else if(h==='y' && ix>=0) iy=idx; // y after x = CIE y
+    else if(h==='y' && ix<0 && iPhi>=0) iY=idx; // Y (luminance) before x
+  });
+  // Fallback: positional
+  if(iPhi<0){iPhi=0; iTheta=1; iY=2; ix=3; iy=4;}
+  if(iY<0) iY=2;
+  if(iy<0) iy=4;
+
+  return lines.slice(1).map(line=>{
+    const c = line.split(delim).map(s=>parseFloat(s.trim()));
+    return {phi:c[iPhi], theta:c[iTheta], Y:c[iY], x:c[ix], y:c[iy]};
+  }).filter(r=>!isNaN(r.phi)&&!isNaN(r.theta)&&!isNaN(r.Y));
 }
 
-function xyToUpVp(x,y){const d=-2*x+12*y+3;return{up:4*x/d,vp:9*y/d}}
+// ── CIE Conversion ──
+function xyToUpVp(x,y){ const d=-2*x+12*y+3; return {up:4*x/d, vp:9*y/d}; }
 
 function preprocess(rows){
-  const conv=rows.map(r=>({...r,...xyToUpVp(r.x,r.y)})).sort((a,b)=>a.phi-b.phi||a.theta-b.theta);
-  const front=conv.filter(r=>r.theta===0);
-  const u0=front.reduce((s,r)=>s+r.up,0)/front.length;
-  const v0=front.reduce((s,r)=>s+r.vp,0)/front.length;
-  const Y0=front.reduce((s,r)=>s+r.Y,0)/front.length;
+  const conv = rows.map(r=>({...r, ...xyToUpVp(r.x, r.y)}))
+    .sort((a,b)=>a.phi-b.phi || a.theta-b.theta);
+
+  // Per-phi front reference (theta=0)
+  const phiGroups = {};
+  conv.forEach(r=>{ if(!phiGroups[r.phi]) phiGroups[r.phi]=[]; phiGroups[r.phi].push(r); });
+
   return conv.map(r=>{
-    const du=r.up-u0,dv=r.vp-v0,duv=Math.sqrt(du*du+dv*dv);
-    const dx=r.x-front[0].x,dy=r.y-front[0].y;
-    return{...r,du,dv,duv,Yrel:r.Y/Y0,dYpct:100*(r.Y/Y0-1),dx,dy,
-      shiftAngle:Math.atan2(dv,du)*180/Math.PI,u0,v0,Y0};
+    const group = phiGroups[r.phi];
+    const front = group.find(g=>g.theta===0) || group.reduce((a,b)=>Math.abs(a.theta)<Math.abs(b.theta)?a:b);
+    const du = r.up - front.up, dv = r.vp - front.vp;
+    const duv = Math.sqrt(du*du + dv*dv);
+    const dx = r.x - front.x, dy = r.y - front.y;
+    return {...r, du, dv, duv, Yrel:r.Y/front.Y, dx, dy, Y0:front.Y, u0:front.up, v0:front.vp};
   });
 }
 
-function updateStats(){
-  if(!PROCESSED.length)return;
-  const maxDuv=Math.max(...PROCESSED.map(r=>r.duv));
-  const avgDuv=PROCESSED.filter(r=>r.theta>0).reduce((s,r)=>s+r.duv,0)/PROCESSED.filter(r=>r.theta>0).length;
-  const at60=PROCESSED.filter(r=>r.theta===60);
-  const yDrop=at60.length?Math.min(...at60.map(r=>r.Yrel)):0;
-  const maxPhi=PROCESSED.reduce((p,r)=>r.duv>p.duv?r:p,PROCESSED[0]);
-  const dxs=PROCESSED.map(r=>r.dx),dys=PROCESSED.map(r=>r.dy);
-
-  document.getElementById('sMaxDuv').textContent=maxDuv.toFixed(4);
-  document.getElementById('sAvgDuv').textContent=avgDuv.toFixed(4);
-  document.getElementById('sYdrop').textContent=((1-yDrop)*100).toFixed(1)+'%';
-  document.getElementById('sMaxPhi').textContent=maxPhi.phi+'° @θ='+maxPhi.theta+'°';
-  document.getElementById('sDxRange').textContent=(Math.max(...dxs)-Math.min(...dxs)).toFixed(5);
-  document.getElementById('sDyRange').textContent=(Math.max(...dys)-Math.min(...dys)).toFixed(5);
-
-  // Spec compliance
-  const at45=PROCESSED.filter(r=>r.theta===45);
-  const maxDuv45=at45.length?Math.max(...at45.map(r=>r.duv)):0;
-  const maxDuv60=at60.length?Math.max(...at60.map(r=>r.duv)):0;
-  const minYrel60=at60.length?Math.min(...at60.map(r=>r.Yrel)):0;
-  const s1=document.getElementById('spec1'),s2=document.getElementById('spec2'),s3=document.getElementById('spec3');
-  s1.textContent=maxDuv45<.02?'PASS ✓':'FAIL ✗ ('+maxDuv45.toFixed(4)+')';
-  s1.style.color=maxDuv45<.02?'var(--green)':'var(--red)';
-  s2.textContent=maxDuv60<.04?'PASS ✓':'FAIL ✗ ('+maxDuv60.toFixed(4)+')';
-  s2.style.color=maxDuv60<.04?'var(--green)':'var(--red)';
-  s3.textContent=minYrel60>.5?'PASS ✓':'FAIL ✗ ('+(minYrel60*100).toFixed(1)+'%)';
-  s3.style.color=minYrel60>.5?'var(--green)':'var(--red)';
+// ── Data Loading ──
+function loadData(rows){
+  DATA=rows; PROCESSED=preprocess(rows);
+  const sel=document.getElementById('phiSel');
+  const phis=[...new Set(rows.map(r=>r.phi))].sort((a,b)=>a-b);
+  sel.innerHTML=`<option value="all">${LANG==='ko'?'전체 방위각':'All Azimuths'}</option>`;
+  phis.forEach(p=>{ sel.innerHTML+=`<option value="${p}">φ = ${p}°</option>`; });
+  replot();
 }
 
-function replot(){
-  if(!PROCESSED.length)return;
-  const dark=document.documentElement.dataset.theme==='dark';
-  const bg=dark?'#161b22':'#f6f8fa',fg=dark?'#c9d1d9':'#24292f',grid=dark?'#30363d':'#d0d7de';
-  const lo={paper_bgcolor:bg,plot_bgcolor:bg,font:{color:fg,size:10},margin:{l:45,r:15,t:10,b:35},
-    xaxis:{gridcolor:grid},yaxis:{gridcolor:grid},showlegend:true,legend:{font:{size:8},x:.7,y:.98}};
+function loadFile(e){
+  const file=e.target.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{ try{loadData(parseCSV(ev.target.result))}catch(err){alert('CSV Error: '+err.message)} };
+  reader.readAsText(file);
+}
 
-  const selPhi=document.getElementById('phiSel').value;
-  const phis=selPhi==='all'?PHIS:[+selPhi];
+function loadRemoteCSV(){
+  const url='https://raw.githubusercontent.com/waterfirst/oled-viewing-angle/master/data.csv';
+  document.getElementById('dropZone').innerHTML='<p class="loading">Loading data.csv...</p>';
+  fetch(url).then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text()})
+    .then(text=>{
+      document.getElementById('dropZone').innerHTML='<p style="color:var(--green)">&#x2705; data.csv 로드 완료</p>';
+      loadData(parseCSV(text));
+    })
+    .catch(err=>{
+      document.getElementById('dropZone').innerHTML=`<p style="color:var(--red)">&#x274C; ${err.message}</p>`;
+    });
+}
+
+function useSample(){
+  const rows=[];
+  [0,45,90,135].forEach(phi=>{
+    for(let theta=-60;theta<=60;theta++){
+      const t=Math.abs(theta)/60, rad=phi*Math.PI/180;
+      const dx=.002*t*t+.006*t*t*Math.cos(rad+.5);
+      const dy=-.001*t*t+.004*t*t*Math.sin(rad-.3);
+      const yRoll=1-.35*Math.pow(t,1.4)-.04*Math.cos(rad)*Math.pow(t,1.2);
+      rows.push({phi, theta, Y:+(850*yRoll).toFixed(1), x:+(.308+dx).toFixed(4), y:+(.325+dy).toFixed(4)});
+    }
+  });
+  loadData(rows);
+}
+
+// ── Plot Helpers ──
+function getLayout(extra){
+  const dark=document.documentElement.dataset.theme==='dark';
+  const bg=dark?'#161b22':'#f6f8fa', fg=dark?'#c9d1d9':'#24292f', grid=dark?'#21262d':'#d8dee4';
+  return {...extra, paper_bgcolor:bg, plot_bgcolor:bg, font:{color:fg,size:10},
+    margin:{l:50,r:15,t:10,b:40}, showlegend:true, legend:{font:{size:9},bgcolor:'transparent'}};
+}
+function getColor(phi){ return PHI_COLORS[phi] || '#8b949e'; }
+
+// ── Main Plot ──
+function replot(){
+  if(!PROCESSED.length) return;
+  const selPhi = document.getElementById('phiSel').value;
+  const allPhis = [...new Set(PROCESSED.map(r=>r.phi))].sort((a,b)=>a-b);
+  const phis = selPhi==='all' ? allPhis : [+selPhi];
 
   // Plot 1: Δu'v' vs θ
-  const traces1=phis.map((phi,i)=>{
+  const t1 = phis.map(phi=>{
     const d=PROCESSED.filter(r=>r.phi===phi);
-    return{x:d.map(r=>r.theta),y:d.map(r=>r.duv),name:'φ='+phi+'°',type:'scatter',mode:'lines',
-      line:{color:PHI_COLORS[PHIS.indexOf(phi)%8],width:2}};
+    return {x:d.map(r=>r.theta), y:d.map(r=>r.duv), name:'φ='+phi+'°', type:'scatter', mode:'lines',
+      line:{color:getColor(phi),width:2}};
   });
-  // Add spec lines
-  traces1.push({x:[0,60],y:[.02,.02],name:'Spec @45°',mode:'lines',line:{color:'#f85149',dash:'dot',width:1}});
-  traces1.push({x:[0,60],y:[.04,.04],name:'Spec @60°',mode:'lines',line:{color:'#f8514988',dash:'dot',width:1}});
-  Plotly.newPlot('plot1',traces1,{...lo,xaxis:{...lo.xaxis,title:'θ (°)'},yaxis:{...lo.yaxis,title:"Δu'v'"}});
+  t1.push({x:[-60,60],y:[.02,.02],name:'Spec 0.02',mode:'lines',line:{color:'#f85149',dash:'dot',width:1}});
+  Plotly.newPlot('plot1',t1,getLayout({xaxis:{title:'θ (°)',zeroline:true},yaxis:{title:"Δu'v'"}}));
 
-  // Plot 2: u'v' chromaticity
-  const traces2=phis.map((phi,i)=>{
+  // Plot 2: Y/Y₀ vs θ
+  const t2 = phis.map(phi=>{
     const d=PROCESSED.filter(r=>r.phi===phi);
-    return{x:d.map(r=>r.up),y:d.map(r=>r.vp),name:'φ='+phi+'°',type:'scatter',mode:'lines+markers',
-      marker:{size:3},line:{color:PHI_COLORS[PHIS.indexOf(phi)%8],width:1.5}};
+    return {x:d.map(r=>r.theta), y:d.map(r=>r.Yrel*100), name:'φ='+phi+'°', type:'scatter', mode:'lines',
+      line:{color:getColor(phi),width:2}};
   });
-  // Front point
-  const f=PROCESSED[0];
-  traces2.push({x:[f.u0],y:[f.v0],name:'Front',mode:'markers',marker:{size:10,color:'#f85149',symbol:'star'}});
-  Plotly.newPlot('plot2',traces2,{...lo,xaxis:{...lo.xaxis,title:"u'"},yaxis:{...lo.yaxis,title:"v'"}});
+  const lambThetas = Array.from({length:121},(_,i)=>i-60);
+  t2.push({x:lambThetas, y:lambThetas.map(t=>Math.cos(t*Math.PI/180)*100), name:'Lambertian',
+    mode:'lines', line:{color:'#8b949e',dash:'dash',width:1}});
+  Plotly.newPlot('plot2',t2,getLayout({xaxis:{title:'θ (°)',zeroline:true},yaxis:{title:'Y / Y₀ (%)'}}));
 
-  // Plot 3: Luminance roll-off
-  const traces3=phis.map((phi,i)=>{
+  // Plot 3: u'v' chromaticity
+  const t3 = phis.map(phi=>{
     const d=PROCESSED.filter(r=>r.phi===phi);
-    return{x:d.map(r=>r.theta),y:d.map(r=>r.Yrel*100),name:'φ='+phi+'°',type:'scatter',mode:'lines',
-      line:{color:PHI_COLORS[PHIS.indexOf(phi)%8],width:2}};
+    return {x:d.map(r=>r.up), y:d.map(r=>r.vp), name:'φ='+phi+'°', type:'scatter',
+      mode:'lines+markers', marker:{size:2}, line:{color:getColor(phi),width:1.5}};
   });
-  // Lambertian reference
-  const lamb=THETAS.map(t=>({t,y:Math.cos(t*Math.PI/180)*100}));
-  traces3.push({x:lamb.map(l=>l.t),y:lamb.map(l=>l.y),name:'Lambertian',mode:'lines',
-    line:{color:'#8b949e',dash:'dash',width:1}});
-  Plotly.newPlot('plot3',traces3,{...lo,xaxis:{...lo.xaxis,title:'θ (°)'},yaxis:{...lo.yaxis,title:'Y / Y₀ (%)'}});
+  const front=PROCESSED.find(r=>r.theta===0);
+  if(front) t3.push({x:[front.u0],y:[front.v0],name:'θ=0°',mode:'markers',marker:{size:10,color:'#f85149',symbol:'star'}});
+  Plotly.newPlot('plot3',t3,getLayout({xaxis:{title:"u'"},yaxis:{title:"v'"}}));
 
-  // Plot 4: Polar map of Δu'v'
-  const polarData=PHIS.map(phi=>{
+  // Plot 4: CIE x,y vs θ
+  const t4=[];
+  phis.forEach(phi=>{
     const d=PROCESSED.filter(r=>r.phi===phi);
-    return{theta:d.map(r=>r.phi),r:d.map(r=>r.duv),name:'θ='+d.map(r=>r.theta).join(','),
-      type:'scatterpolar',mode:'markers',marker:{size:d.map(r=>2+r.theta/5),
-      color:d.map(r=>r.duv),colorscale:'Portland',cmin:0,cmax:Math.max(...PROCESSED.map(r=>r.duv))}};
+    t4.push({x:d.map(r=>r.theta),y:d.map(r=>r.x),name:'x (φ='+phi+'°)',type:'scatter',mode:'lines',
+      line:{color:getColor(phi),width:1.5}});
+    t4.push({x:d.map(r=>r.theta),y:d.map(r=>r.y),name:'y (φ='+phi+'°)',type:'scatter',mode:'lines',
+      line:{color:getColor(phi),width:1.5,dash:'dot'}});
   });
-  // Simplified: just show max per azimuth
-  const polarSimple=PHIS.map(phi=>{
-    const d=PROCESSED.filter(r=>r.phi===phi);
-    const maxD=d.reduce((p,r)=>r.duv>p.duv?r:p,d[0]);
-    return{phi,maxDuv:maxD.duv,atTheta:maxD.theta};
-  });
-  Plotly.newPlot('plot4',[{
-    type:'scatterpolar',mode:'lines+markers',
-    theta:[...polarSimple.map(p=>p.phi),polarSimple[0].phi],
-    r:[...polarSimple.map(p=>p.maxDuv),polarSimple[0].maxDuv],
-    name:'Max Δu\'v\'',fill:'toself',fillcolor:dark?'rgba(88,166,255,0.1)':'rgba(9,105,218,0.1)',
-    line:{color:'var(--accent)',width:2},marker:{size:8}
-  }],{...lo,polar:{bgcolor:bg,angularaxis:{gridcolor:grid,color:fg},radialaxis:{gridcolor:grid,color:fg}}});
+  Plotly.newPlot('plot4',t4,getLayout({xaxis:{title:'θ (°)',zeroline:true},yaxis:{title:'CIE x, y'}}));
 
   // Plot 5: Δx, Δy vs θ
-  const traces5=[];
-  phis.forEach((phi,i)=>{
+  const t5=[];
+  phis.forEach(phi=>{
     const d=PROCESSED.filter(r=>r.phi===phi);
-    traces5.push({x:d.map(r=>r.theta),y:d.map(r=>r.dx),name:'Δx φ='+phi+'°',type:'scatter',mode:'lines',
-      line:{color:PHI_COLORS[PHIS.indexOf(phi)%8],width:1.5}});
-    traces5.push({x:d.map(r=>r.theta),y:d.map(r=>r.dy),name:'Δy φ='+phi+'°',type:'scatter',mode:'lines',
-      line:{color:PHI_COLORS[PHIS.indexOf(phi)%8],width:1.5,dash:'dot'}});
+    t5.push({x:d.map(r=>r.theta),y:d.map(r=>r.dx),name:'Δx (φ='+phi+'°)',type:'scatter',mode:'lines',
+      line:{color:getColor(phi),width:1.5}});
+    t5.push({x:d.map(r=>r.theta),y:d.map(r=>r.dy),name:'Δy (φ='+phi+'°)',type:'scatter',mode:'lines',
+      line:{color:getColor(phi),width:1.5,dash:'dot'}});
   });
-  Plotly.newPlot('plot5',traces5,{...lo,xaxis:{...lo.xaxis,title:'θ (°)'},yaxis:{...lo.yaxis,title:'Δx, Δy'}});
+  Plotly.newPlot('plot5',t5,getLayout({xaxis:{title:'θ (°)',zeroline:true},yaxis:{title:'Δx, Δy'}}));
 
-  // Plot 6: Shift direction (du vs dv quiver-like)
-  const t6=phis.map((phi,i)=>{
-    const d=PROCESSED.filter(r=>r.phi===phi&&r.theta>0&&r.theta%10===0);
-    return{x:d.map(r=>r.du),y:d.map(r=>r.dv),text:d.map(r=>'φ='+r.phi+'° θ='+r.theta+'°'),
-      name:'φ='+phi+'°',type:'scatter',mode:'markers+text',textposition:'top center',textfont:{size:7},
-      marker:{size:d.map(r=>4+r.theta/10),color:PHI_COLORS[PHIS.indexOf(phi)%8]}};
+  // Plot 6: Polar map
+  const polarData = allPhis.map(phi=>{
+    const d=PROCESSED.filter(r=>r.phi===phi && r.theta>=0);
+    const maxR=d.reduce((p,r)=>r.duv>p.duv?r:p,d[0]);
+    return {phi, maxDuv:maxR.duv, atTheta:maxR.theta};
   });
-  t6.push({x:[0],y:[0],name:'Front',mode:'markers',marker:{size:10,color:'#f85149',symbol:'x'}});
-  Plotly.newPlot('plot6',t6,{...lo,xaxis:{...lo.xaxis,title:"Δu'"},yaxis:{...lo.yaxis,title:"Δv'"}});
+  const dark=document.documentElement.dataset.theme==='dark';
+  const polBg=dark?'#161b22':'#f6f8fa', polFg=dark?'#c9d1d9':'#24292f', polGrid=dark?'#21262d':'#d8dee4';
+  Plotly.newPlot('plot6',[{
+    type:'scatterpolar', mode:'lines+markers',
+    theta:[...polarData.map(p=>p.phi), polarData[0].phi],
+    r:[...polarData.map(p=>p.maxDuv), polarData[0].maxDuv],
+    name:"Max Δu'v'", fill:'toself',
+    fillcolor:dark?'rgba(88,166,255,0.1)':'rgba(9,105,218,0.1)',
+    line:{color:'#58a6ff',width:2}, marker:{size:8,color:polarData.map(p=>getColor(p.phi))}
+  }],{
+    paper_bgcolor:polBg, font:{color:polFg,size:10}, margin:{l:40,r:40,t:20,b:20}, showlegend:false,
+    polar:{bgcolor:polBg, angularaxis:{gridcolor:polGrid,color:polFg}, radialaxis:{gridcolor:polGrid,color:polFg}}
+  });
+
+  // Plot 7: Normalized Y symmetry
+  const t7 = phis.map(phi=>{
+    const d=PROCESSED.filter(r=>r.phi===phi);
+    return {x:d.map(r=>r.theta), y:d.map(r=>r.Y), name:'φ='+phi+'°', type:'scatter', mode:'lines',
+      line:{color:getColor(phi),width:2}};
+  });
+  Plotly.newPlot('plot7',t7,getLayout({xaxis:{title:'θ (°)',zeroline:true},yaxis:{title:'Luminance Y (cd/m²)'}}));
 
   updateStats();
   replot3d();
   buildSummary();
 }
 
-function loadData(rows){
-  DATA=rows;PROCESSED=preprocess(rows);
-  // Populate phi selector
-  const sel=document.getElementById('phiSel');
-  sel.innerHTML='<option value="all">All Azimuths</option>';
-  const uniquePhis=[...new Set(rows.map(r=>r.phi))].sort((a,b)=>a-b);
-  uniquePhis.forEach(p=>{sel.innerHTML+=`<option value="${p}">φ = ${p}°</option>`});
-  replot();
-}
-
-function useSample(){loadData(generateSample())}
-
-function loadFile(e){
-  const file=e.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    try{
-      const rows=parseCSV(ev.target.result);
-      loadData(rows);
-    }catch(err){alert('CSV Error: '+err.message)}
-  };
-  reader.readAsText(file);
-}
-
-function parseCSV(text){
-  const lines=text.trim().split(/\r?\n/).filter(Boolean);
-  const delim=lines[0].includes(';')?';':lines[0].includes('\t')?'\t':',';
-  const hdr=lines[0].split(delim).map(h=>h.trim().toLowerCase());
-  const hasHdr=hdr.some(h=>/^(phi|theta|x|y)$/.test(h));
-  const start=hasHdr?1:0;
-  const ci=hasHdr?{phi:hdr.indexOf('phi'),theta:hdr.indexOf('theta'),
-    Y:hdr.findIndex(h=>h==='y'&&hdr.indexOf('y')!==hdr.lastIndexOf('y')?false:h==='luminance'||h==='y'),
-    x:hdr.indexOf('x'),y:hdr.lastIndexOf('y')}
-    :{phi:0,theta:1,Y:2,x:3,y:4};
-  // Better: find Y=luminance column, x=CIE x, y=CIE y
-  if(hasHdr){
-    ci.Y=hdr.findIndex(h=>h==='luminance'||h==='lum'||(h==='y'&&hdr.indexOf('y')===hdr.lastIndexOf('y')?false:true));
-    if(ci.Y<0)ci.Y=2;
-    ci.x=hdr.indexOf('x');
-    ci.y=hdr.lastIndexOf('y');
-  }
-  return lines.slice(start).map(line=>{
-    const c=line.split(delim).map(s=>s.trim());
-    return{phi:+c[ci.phi],theta:+c[ci.theta],Y:+c[ci.Y],x:+c[ci.x],y:+c[ci.y]};
-  }).filter(r=>!isNaN(r.phi)&&!isNaN(r.theta));
-}
-
-function exportCSV(){
-  if(!PROCESSED.length){alert('No data');return}
-  let csv="phi,theta,Y,x,y,u',v',du',dv',duv,Y_rel,dx,dy\n";
-  PROCESSED.forEach(r=>{csv+=`${r.phi},${r.theta},${r.Y},${r.x},${r.y},${r.up.toFixed(6)},${r.vp.toFixed(6)},${r.du.toFixed(6)},${r.dv.toFixed(6)},${r.duv.toFixed(6)},${r.Yrel.toFixed(4)},${r.dx.toFixed(6)},${r.dy.toFixed(6)}\n`});
-  const blob=new Blob([csv],{type:'text/csv'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='viewing_angle_analysis.csv';a.click();
-}
-
-function resetAll(){DATA=[];PROCESSED=[];
-  ['plot1','plot2','plot3','plot4','plot5','plot6'].forEach(id=>Plotly.purge(id));
-  document.querySelectorAll('.val').forEach(el=>el.textContent='—');
-  ['spec1','spec2','spec3'].forEach(id=>{document.getElementById(id).textContent='—';document.getElementById(id).style.color=''});
-}
-
-// Palette swatches
-const palRow=document.getElementById('palRow');
-Object.entries(PALETTES).forEach(([name,colors])=>{
-  const sw=document.createElement('div');
-  sw.className='pal-swatch'+(name===currentPalette?' active':'');
-  sw.style.background=`linear-gradient(90deg,${colors.join(',')})`;
-  sw.title=name;sw.onclick=()=>{currentPalette=name;
-    document.querySelectorAll('.pal-swatch').forEach(s=>s.classList.remove('active'));
-    sw.classList.add('active');if(PROCESSED.length)replot();};
-  palRow.appendChild(sw);
-});
-
-// === 3D Surface Plot ===
+// ── 3D Surface ──
 function replot3d(){
-  if(!PROCESSED.length)return;
+  if(!PROCESSED.length) return;
   const dark=document.documentElement.dataset.theme==='dark';
-  const bg=dark?'#161b22':'#f6f8fa',fg=dark?'#c9d1d9':'#24292f';
+  const bg=dark?'#161b22':'#f6f8fa', fg=dark?'#c9d1d9':'#24292f';
   const metric=document.getElementById('metric3d').value;
   const phis=[...new Set(PROCESSED.map(r=>r.phi))].sort((a,b)=>a-b);
   const thetas=[...new Set(PROCESSED.map(r=>r.theta))].sort((a,b)=>a-b);
-  const lookup=new Map();PROCESSED.forEach(r=>lookup.set(r.phi+'_'+r.theta,r));
-  const z=phis.map(p=>thetas.map(t=>{const r=lookup.get(p+'_'+t);return r?r[metric]||0:0}));
+  const lookup=new Map(); PROCESSED.forEach(r=>lookup.set(r.phi+'_'+r.theta, r));
+  const z=phis.map(p=>thetas.map(t=>{ const r=lookup.get(p+'_'+t); return r?r[metric]||0:0; }));
   Plotly.newPlot('plot3d',[{type:'surface',z,x:thetas,y:phis,colorscale:'Portland',
     colorbar:{title:metric,titlefont:{size:10},tickfont:{size:9}}}],
-    {paper_bgcolor:bg,plot_bgcolor:bg,font:{color:fg,size:10},margin:{l:40,r:20,t:10,b:40},
-     scene:{xaxis:{title:'θ (°)'},yaxis:{title:'φ (°)'},zaxis:{title:metric},
-       bgcolor:bg}});
-
-  // Polar heatmap (2D filled contour in polar)
-  const rVals=[],thetaVals=[],cVals=[];
-  PROCESSED.forEach(r=>{rVals.push(r.theta);thetaVals.push(r.phi);cVals.push(r.duv)});
-  Plotly.newPlot('plotPolar2d',[{type:'scatterpolar',mode:'markers',r:rVals,theta:thetaVals,
-    marker:{size:4,color:cVals,colorscale:'Portland',cmin:0,
-      cmax:Math.max(...PROCESSED.map(r=>r.duv)),colorbar:{title:"Δu'v'",len:.7,tickfont:{size:9}}},
-    text:PROCESSED.map(r=>'φ='+r.phi+'° θ='+r.theta+'° Δu\'v\'='+r.duv.toFixed(5))}],
-    {paper_bgcolor:bg,font:{color:fg,size:10},margin:{l:30,r:30,t:10,b:30},
-     polar:{bgcolor:bg,radialaxis:{gridcolor:dark?'#30363d':'#d0d7de',color:fg},
-       angularaxis:{gridcolor:dark?'#30363d':'#d0d7de',color:fg}}});
+    {paper_bgcolor:bg,plot_bgcolor:bg,font:{color:fg,size:10},margin:{l:30,r:20,t:10,b:30},
+     scene:{xaxis:{title:'θ (°)'},yaxis:{title:'φ (°)'},zaxis:{title:metric},bgcolor:bg}});
 }
 
-// === Summary Table ===
+// ── Stats ──
+function updateStats(){
+  if(!PROCESSED.length) return;
+  const maxDuv=Math.max(...PROCESSED.map(r=>r.duv));
+  const posTheta=PROCESSED.filter(r=>Math.abs(r.theta)>0);
+  const avgDuv=posTheta.reduce((s,r)=>s+r.duv,0)/posTheta.length;
+  const at60=PROCESSED.filter(r=>Math.abs(r.theta)===60);
+  const minYrel60=at60.length?Math.min(...at60.map(r=>r.Yrel)):0;
+  const worst=PROCESSED.reduce((p,r)=>r.duv>p.duv?r:p, PROCESSED[0]);
+  const dxs=PROCESSED.map(r=>r.dx), dys=PROCESSED.map(r=>r.dy);
+
+  document.getElementById('sMaxDuv').textContent=maxDuv.toFixed(4);
+  document.getElementById('sAvgDuv').textContent=avgDuv.toFixed(4);
+  document.getElementById('sYdrop').textContent=((1-minYrel60)*100).toFixed(1)+'%';
+  document.getElementById('sMaxPhi').textContent='φ='+worst.phi+'° θ='+worst.theta+'°';
+  document.getElementById('sDxRange').textContent=(Math.max(...dxs)-Math.min(...dxs)).toFixed(4);
+  document.getElementById('sDyRange').textContent=(Math.max(...dys)-Math.min(...dys)).toFixed(4);
+
+  // Spec compliance
+  const at45=PROCESSED.filter(r=>Math.abs(r.theta)===45);
+  const maxDuv45=at45.length?Math.max(...at45.map(r=>r.duv)):0;
+  const maxDuv60=at60.length?Math.max(...at60.map(r=>r.duv)):0;
+
+  const specs=[
+    {label:"Δu'v' < 0.020 @ θ=45°", val:maxDuv45, limit:0.02},
+    {label:"Δu'v' < 0.040 @ θ=60°", val:maxDuv60, limit:0.04},
+    {label:"Y/Y₀ > 50% @ θ=60°", val:minYrel60, limit:0.5, invert:true},
+  ];
+
+  let specHtml='';
+  specs.forEach(s=>{
+    const pass = s.invert ? s.val > s.limit : s.val < s.limit;
+    const valStr = s.invert ? (s.val*100).toFixed(1)+'%' : s.val.toFixed(4);
+    specHtml+=`<div class="spec-row"><span>${s.label}</span>
+      <span class="badge ${pass?'badge-pass':'badge-fail'}">${pass?'PASS':'FAIL'} (${valStr})</span></div>`;
+  });
+  document.getElementById('specBox').innerHTML=specHtml;
+
+  // Analysis text
+  const allPhis=[...new Set(PROCESSED.map(r=>r.phi))].sort((a,b)=>a-b);
+  let analysis='';
+  if(LANG==='ko'){
+    analysis=`<h5>분석 요약</h5>`;
+    analysis+=`<p>• 최대 색 변화: Δu'v' = ${maxDuv.toFixed(4)} (φ=${worst.phi}°, θ=${worst.theta}°)</p>`;
+    analysis+=`<p>• θ=±45°에서 최대 Δu'v' = ${maxDuv45.toFixed(4)} ${maxDuv45<0.02?'(스펙 충족)':'(스펙 초과 ⚠️)'}</p>`;
+    analysis+=`<p>• θ=±60°에서 최소 휘도 비율 = ${(minYrel60*100).toFixed(1)}%</p>`;
+    const asymPhis=allPhis.filter(phi=>{
+      const pos=PROCESSED.filter(r=>r.phi===phi&&r.theta===45);
+      const neg=PROCESSED.filter(r=>r.phi===phi&&r.theta===-45);
+      if(!pos.length||!neg.length) return false;
+      return Math.abs(pos[0].duv-neg[0].duv)>0.003;
+    });
+    if(asymPhis.length) analysis+=`<p>• φ=${asymPhis.join('°, ')}°에서 좌우 비대칭 관찰</p>`;
+  } else {
+    analysis=`<h5>Analysis Summary</h5>`;
+    analysis+=`<p>• Max color shift: Δu'v' = ${maxDuv.toFixed(4)} at φ=${worst.phi}°, θ=${worst.theta}°</p>`;
+    analysis+=`<p>• Δu'v' at ±45° = ${maxDuv45.toFixed(4)} ${maxDuv45<0.02?'(within spec)':'(exceeds spec ⚠️)'}</p>`;
+    analysis+=`<p>• Min luminance ratio at ±60° = ${(minYrel60*100).toFixed(1)}%</p>`;
+  }
+  document.getElementById('analysisBox').innerHTML=analysis;
+}
+
+// ── Summary Table ──
 function buildSummary(){
-  if(!PROCESSED.length){document.getElementById('summaryTable').innerHTML='';return;}
+  if(!PROCESSED.length){ document.getElementById('summaryTable').innerHTML=''; return; }
   const thetaMap=new Map();
-  PROCESSED.forEach(r=>{if(!thetaMap.has(r.theta))thetaMap.set(r.theta,[]);thetaMap.get(r.theta).push(r)});
-  const rows=Array.from(thetaMap.entries()).sort((a,b)=>a[0]-b[0]).filter(([t])=>t%5===0).map(([theta,list])=>{
+  PROCESSED.forEach(r=>{ if(!thetaMap.has(r.theta)) thetaMap.set(r.theta,[]); thetaMap.get(r.theta).push(r); });
+
+  const rows=Array.from(thetaMap.entries()).sort((a,b)=>a[0]-b[0])
+    .filter(([t])=>t%5===0).map(([theta,list])=>{
     const mean=list.reduce((s,r)=>s+r.duv,0)/list.length;
     const max=Math.max(...list.map(r=>r.duv));
-    const sorted=[...list].sort((a,b)=>a.duv-b.duv);
-    const p95=sorted[Math.min(sorted.length-1,Math.ceil(.95*sorted.length)-1)].duv;
-    const aniso=max-Math.min(...list.map(r=>r.duv));
-    const worst=list.reduce((m,r)=>r.duv>m.duv?r:m,list[0]);
     const minY=Math.min(...list.map(r=>r.Yrel));
-    return`<tr><td>${theta}°</td><td>${mean.toFixed(5)}</td><td>${max.toFixed(5)}</td>
-      <td>${p95.toFixed(5)}</td><td>${aniso.toFixed(5)}</td><td>${worst.phi}°</td>
-      <td>${(minY*100).toFixed(1)}%</td></tr>`;
+    const worst=list.reduce((m,r)=>r.duv>m.duv?r:m,list[0]);
+    const warn=max>0.02?' style="color:var(--red)"':'';
+    return`<tr><td>${theta}°</td><td>${mean.toFixed(5)}</td><td${warn}>${max.toFixed(5)}</td>
+      <td>${worst.phi}°</td><td>${(minY*100).toFixed(1)}%</td></tr>`;
   }).join('');
+
   document.getElementById('summaryTable').innerHTML=
-    `<table style="width:100%;border-collapse:collapse"><tr style="border-bottom:1px solid var(--border)">
-    <th style="text-align:left;padding:3px">θ</th><th>Mean Δu'v'</th><th>Max</th><th>P95</th>
-    <th>Aniso</th><th>Worst φ</th><th>Min Y/Y₀</th></tr>${rows}</table>`;
+    `<table style="width:100%;border-collapse:collapse;margin-top:6px">
+    <tr style="border-bottom:2px solid var(--border);text-align:left">
+    <th style="padding:4px 8px">θ</th><th>Mean Δu'v'</th><th>Max Δu'v'</th><th>Worst φ</th><th>Min Y/Y₀</th></tr>${rows}</table>`;
 }
 
-// === HTML Report Export ===
+// ── CSV Export ──
+function exportCSV(){
+  if(!PROCESSED.length){alert('No data');return;}
+  let csv="Phi,Theta,Y,x,y,u_prime,v_prime,delta_u,delta_v,delta_uv,Y_rel,delta_x,delta_y\n";
+  PROCESSED.forEach(r=>{
+    csv+=`${r.phi},${r.theta},${r.Y},${r.x},${r.y},${r.up.toFixed(6)},${r.vp.toFixed(6)},${r.du.toFixed(6)},${r.dv.toFixed(6)},${r.duv.toFixed(6)},${r.Yrel.toFixed(4)},${r.dx.toFixed(6)},${r.dy.toFixed(6)}\n`;
+  });
+  downloadBlob(csv,'text/csv','oled_viewing_angle_analysis.csv');
+}
+
+// ── Full HTML Report Export ──
 function exportReport(){
   if(!PROCESSED.length){alert('No data');return;}
-  const stats=[];
-  const thetaMap=new Map();
-  PROCESSED.forEach(r=>{if(!thetaMap.has(r.theta))thetaMap.set(r.theta,[]);thetaMap.get(r.theta).push(r)});
-  Array.from(thetaMap.entries()).sort((a,b)=>a[0]-b[0]).filter(([t])=>t%10===0).forEach(([theta,list])=>{
-    stats.push({theta,mean:+(list.reduce((s,r)=>s+r.duv,0)/list.length).toFixed(5),
-      max:+Math.max(...list.map(r=>r.duv)).toFixed(5),
-      minY:+(Math.min(...list.map(r=>r.Yrel))*100).toFixed(1)});
-  });
+
+  const allPhis=[...new Set(PROCESSED.map(r=>r.phi))].sort((a,b)=>a-b);
   const maxDuv=Math.max(...PROCESSED.map(r=>r.duv));
-  const at45=PROCESSED.filter(r=>r.theta===45),at60=PROCESSED.filter(r=>r.theta===60);
-  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>OLED Viewing Angle Report</title>
+  const worst=PROCESSED.reduce((p,r)=>r.duv>p.duv?r:p,PROCESSED[0]);
+  const at45=PROCESSED.filter(r=>Math.abs(r.theta)===45);
+  const at60=PROCESSED.filter(r=>Math.abs(r.theta)===60);
+  const maxDuv45=at45.length?Math.max(...at45.map(r=>r.duv)):0;
+  const maxDuv60=at60.length?Math.max(...at60.map(r=>r.duv)):0;
+  const minYrel60=at60.length?Math.min(...at60.map(r=>r.Yrel)):0;
+
+  // Summary table data
+  const thetaMap=new Map();
+  PROCESSED.forEach(r=>{ if(!thetaMap.has(r.theta)) thetaMap.set(r.theta,[]); thetaMap.get(r.theta).push(r); });
+  const summaryRows=Array.from(thetaMap.entries()).sort((a,b)=>a[0]-b[0])
+    .filter(([t])=>t%5===0).map(([theta,list])=>{
+    return {theta, mean:(list.reduce((s,r)=>s+r.duv,0)/list.length).toFixed(5),
+      max:Math.max(...list.map(r=>r.duv)).toFixed(5),
+      worstPhi:list.reduce((m,r)=>r.duv>m.duv?r:m,list[0]).phi,
+      minY:(Math.min(...list.map(r=>r.Yrel))*100).toFixed(1)};
+  });
+
+  // Per-phi analysis
+  const phiAnalysis=allPhis.map(phi=>{
+    const d=PROCESSED.filter(r=>r.phi===phi);
+    const front=d.find(r=>r.theta===0);
+    const pos45=d.find(r=>r.theta===45);
+    const neg45=d.find(r=>r.theta===-45);
+    const pos60=d.find(r=>r.theta===60);
+    const neg60=d.find(r=>r.theta===-60);
+    return {phi, Y0:front?front.Y:0,
+      duv_pos45:pos45?pos45.duv.toFixed(5):'N/A', duv_neg45:neg45?neg45.duv.toFixed(5):'N/A',
+      duv_pos60:pos60?pos60.duv.toFixed(5):'N/A', duv_neg60:neg60?neg60.duv.toFixed(5):'N/A',
+      Yrel_pos60:pos60?(pos60.Yrel*100).toFixed(1):'N/A', Yrel_neg60:neg60?(neg60.Yrel*100).toFixed(1):'N/A'
+    };
+  });
+
+  const plotData=JSON.stringify(PROCESSED.map(r=>({phi:r.phi,theta:r.theta,duv:r.duv,Yrel:r.Yrel,
+    Y:r.Y,x:r.x,y:r.y,up:r.up,vp:r.vp,du:r.du,dv:r.dv,dx:r.dx,dy:r.dy})));
+
+  const html=`<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OLED Viewing Angle Analysis Report</title>
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"><\/script>
-<style>body{font-family:system-ui;max-width:1000px;margin:0 auto;padding:20px;background:#f8fafc;color:#0f172a}
-.kpi{display:inline-block;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px 18px;margin:4px;text-align:center}
-.kpi b{display:block;font-size:18px;color:#0969da}.kpi small{color:#64748b;font-size:11px}
-table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0}th,td{padding:4px 8px;border-bottom:1px solid #e2e8f0;text-align:left}
-h1{font-size:24px}h2{font-size:18px;margin:16px 0 8px;color:#334155}</style></head><body>
-<h1>OLED Viewing Angle Report</h1>
-<p>Generated: ${new Date().toISOString().slice(0,10)}</p>
-<div>
-<div class="kpi"><small>Max Δu'v'</small><b>${maxDuv.toFixed(5)}</b></div>
-<div class="kpi"><small>Δu'v' @45°</small><b>${at45.length?Math.max(...at45.map(r=>r.duv)).toFixed(5):'—'}</b></div>
-<div class="kpi"><small>Δu'v' @60°</small><b>${at60.length?Math.max(...at60.map(r=>r.duv)).toFixed(5):'—'}</b></div>
-<div class="kpi"><small>Y @60° min</small><b>${at60.length?(Math.min(...at60.map(r=>r.Yrel))*100).toFixed(1)+'%':'—'}</b></div>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:1100px;margin:0 auto;padding:24px;background:#fff;color:#1e293b;line-height:1.6}
+h1{font-size:24px;border-bottom:3px solid #0969da;padding-bottom:8px;margin-bottom:16px}
+h2{font-size:18px;color:#0969da;margin:24px 0 12px;border-left:4px solid #0969da;padding-left:10px}
+h3{font-size:14px;color:#334155;margin:16px 0 8px}
+.meta{color:#64748b;font-size:12px;margin-bottom:20px}
+.kpi-row{display:flex;gap:12px;flex-wrap:wrap;margin:16px 0}
+.kpi{flex:1;min-width:140px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:14px;text-align:center}
+.kpi .val{font-size:22px;font-weight:800;color:#0369a1;font-family:'SF Mono',monospace}
+.kpi .label{font-size:10px;color:#64748b;margin-top:2px}
+.spec-pass{color:#16a34a;font-weight:700}.spec-fail{color:#dc2626;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:11px;margin:8px 0}
+th{background:#f1f5f9;padding:6px 8px;text-align:left;border-bottom:2px solid #cbd5e1;font-size:10px;text-transform:uppercase;color:#475569}
+td{padding:5px 8px;border-bottom:1px solid #e2e8f0}
+tr:hover{background:#f8fafc}
+.chart{margin:12px 0;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:768px){.grid{grid-template-columns:1fr}}
+.note{background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:10px;font-size:11px;color:#92400e;margin:12px 0}
+.footer{margin-top:32px;padding-top:12px;border-top:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center}
+@media print{body{padding:12px;font-size:10px}h1{font-size:18px}h2{font-size:14px}.chart div{height:250px!important}}
+</style></head><body>
+<h1>OLED Viewing Angle Analysis Report</h1>
+<div class="meta">Generated: ${new Date().toLocaleString('ko-KR')} | Data points: ${PROCESSED.length} | Azimuths: φ = ${allPhis.join('°, ')}° | Theta range: ${Math.min(...PROCESSED.map(r=>r.theta))}° ~ ${Math.max(...PROCESSED.map(r=>r.theta))}°</div>
+
+<h2>1. Key Metrics</h2>
+<div class="kpi-row">
+  <div class="kpi"><div class="val">${maxDuv.toFixed(4)}</div><div class="label">Max Δu'v'<br>(φ=${worst.phi}°, θ=${worst.theta}°)</div></div>
+  <div class="kpi"><div class="val">${maxDuv45.toFixed(4)}</div><div class="label">Δu'v' @±45°<br><span class="${maxDuv45<0.02?'spec-pass':'spec-fail'}">${maxDuv45<0.02?'PASS':'FAIL'} (spec < 0.020)</span></div></div>
+  <div class="kpi"><div class="val">${maxDuv60.toFixed(4)}</div><div class="label">Δu'v' @±60°<br><span class="${maxDuv60<0.04?'spec-pass':'spec-fail'}">${maxDuv60<0.04?'PASS':'FAIL'} (spec < 0.040)</span></div></div>
+  <div class="kpi"><div class="val">${(minYrel60*100).toFixed(1)}%</div><div class="label">Min Y/Y₀ @±60°<br><span class="${minYrel60>0.5?'spec-pass':'spec-fail'}">${minYrel60>0.5?'PASS':'FAIL'} (spec > 50%)</span></div></div>
 </div>
-<h2>Δu'v' vs θ</h2><div id="c1" style="height:300px"></div>
-<h2>Luminance Roll-off</h2><div id="c2" style="height:300px"></div>
-<h2>Summary by θ</h2>
-<table><tr><th>θ</th><th>Mean Δu'v'</th><th>Max Δu'v'</th><th>Min Y/Y₀</th></tr>
-${stats.map(s=>`<tr><td>${s.theta}°</td><td>${s.mean}</td><td>${s.max}</td><td>${s.minY}%</td></tr>`).join('')}
+
+<h2>2. Per-Azimuth Detail</h2>
+<table>
+<tr><th>φ</th><th>Y₀ (cd/m²)</th><th>Δu'v' @-45°</th><th>Δu'v' @+45°</th><th>Δu'v' @-60°</th><th>Δu'v' @+60°</th><th>Y/Y₀ @-60°</th><th>Y/Y₀ @+60°</th></tr>
+${phiAnalysis.map(p=>`<tr><td>${p.phi}°</td><td>${p.Y0.toFixed(1)}</td><td>${p.duv_neg45}</td><td>${p.duv_pos45}</td><td>${p.duv_neg60}</td><td>${p.duv_pos60}</td><td>${p.Yrel_neg60}%</td><td>${p.Yrel_pos60}%</td></tr>`).join('')}
 </table>
-<h2>Full Data (${PROCESSED.length} points)</h2>
-<details><summary>Show CSV</summary><pre style="font-size:9px;max-height:300px;overflow:auto">${
-  'phi,theta,duv,Yrel,du,dv\\n'+PROCESSED.map(r=>[r.phi,r.theta,r.duv.toFixed(6),r.Yrel.toFixed(4),r.du.toFixed(6),r.dv.toFixed(6)].join(',')).join('\\n')
-}</pre></details>
+
+<h2>3. Color Shift (Δu'v' vs Viewing Angle)</h2>
+<div class="chart"><div id="r1" style="height:320px"></div></div>
+
+<h2>4. Luminance Roll-off</h2>
+<div class="chart"><div id="r2" style="height:320px"></div></div>
+
+<h2>5. CIE u'v' Chromaticity Trajectory</h2>
+<div class="grid">
+  <div class="chart"><div id="r3" style="height:300px"></div></div>
+  <div class="chart"><div id="r4" style="height:300px"></div></div>
+</div>
+
+<h2>6. CIE x, y Variation</h2>
+<div class="chart"><div id="r5" style="height:300px"></div></div>
+
+<h2>7. Summary by Viewing Angle</h2>
+<table>
+<tr><th>θ</th><th>Mean Δu'v'</th><th>Max Δu'v'</th><th>Worst φ</th><th>Min Y/Y₀</th></tr>
+${summaryRows.map(s=>`<tr><td>${s.theta}°</td><td>${s.mean}</td><td style="${parseFloat(s.max)>0.02?'color:#dc2626;font-weight:700':''}">${s.max}</td><td>${s.worstPhi}°</td><td>${s.minY}%</td></tr>`).join('')}
+</table>
+
+<h2>8. Raw Data</h2>
+<details><summary style="cursor:pointer;color:#0969da;font-size:12px">Click to expand full CSV data (${PROCESSED.length} rows)</summary>
+<pre style="font-size:9px;max-height:400px;overflow:auto;background:#f8fafc;padding:8px;border-radius:4px;margin-top:8px">Phi,Theta,Y,x,y,u_prime,v_prime,delta_uv,Y_rel
+${PROCESSED.map(r=>[r.phi,r.theta,r.Y,r.x,r.y,r.up.toFixed(6),r.vp.toFixed(6),r.duv.toFixed(6),r.Yrel.toFixed(4)].join(',')).join('\n')}</pre>
+</details>
+
+<div class="note">본 보고서는 자동 생성된 분석 결과입니다. 측정 조건 및 장비 정보는 별도 기재가 필요합니다.</div>
+<div class="footer">OLED Viewing Angle Analyzer — github.com/waterfirst/oled-viewing-angle</div>
+
 <script>
-const D=${JSON.stringify(PROCESSED.map(r=>({phi:r.phi,theta:r.theta,duv:r.duv,Yrel:r.Yrel})))};
+const D=${plotData};
 const PHIS=[...new Set(D.map(r=>r.phi))].sort((a,b)=>a-b);
-const cs=['#58a6ff','#f78166','#3fb950','#d2a8ff','#f0883e','#a5d6ff','#ff7b72','#7ee787'];
-Plotly.newPlot('c1',PHIS.map((p,i)=>{const d=D.filter(r=>r.phi===p);
-return{x:d.map(r=>r.theta),y:d.map(r=>r.duv),name:'φ='+p+'°',type:'scatter',line:{color:cs[i%8]}}}),
-{margin:{l:50,r:20,t:10,b:40},xaxis:{title:'θ (°)'},yaxis:{title:"Δu'v'"}});
-Plotly.newPlot('c2',PHIS.map((p,i)=>{const d=D.filter(r=>r.phi===p);
-return{x:d.map(r=>r.theta),y:d.map(r=>r.Yrel*100),name:'φ='+p+'°',type:'scatter',line:{color:cs[i%8]}}}),
-{margin:{l:50,r:20,t:10,b:40},xaxis:{title:'θ (°)'},yaxis:{title:'Y/Y₀ (%)'}});
-<\/script></body></html>`;
-  const blob=new Blob([html],{type:'text/html'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='oled_viewing_angle_report.html';a.click();
+const cs={0:'#2563eb',45:'#dc2626',90:'#16a34a',135:'#9333ea',180:'#ea580c',225:'#0891b2',270:'#be185d',315:'#65a30d'};
+const lo={paper_bgcolor:'#fff',plot_bgcolor:'#fff',font:{size:10,color:'#334155'},margin:{l:50,r:20,t:10,b:40},
+  showlegend:true,legend:{font:{size:9}}};
+
+// Δu'v'
+Plotly.newPlot('r1',
+  [...PHIS.map(p=>{const d=D.filter(r=>r.phi===p);return{x:d.map(r=>r.theta),y:d.map(r=>r.duv),name:'φ='+p+'°',line:{color:cs[p]||'#666',width:2}}}),
+   {x:[-60,60],y:[.02,.02],name:'Spec 0.02',line:{color:'#dc2626',dash:'dot',width:1}}],
+  {...lo,xaxis:{title:'θ (°)',zeroline:true,gridcolor:'#f1f5f9'},yaxis:{title:"Δu'v'",gridcolor:'#f1f5f9'}});
+
+// Y/Y₀
+const lamb=Array.from({length:121},(_,i)=>i-60);
+Plotly.newPlot('r2',
+  [...PHIS.map(p=>{const d=D.filter(r=>r.phi===p);return{x:d.map(r=>r.theta),y:d.map(r=>r.Yrel*100),name:'φ='+p+'°',line:{color:cs[p]||'#666',width:2}}}),
+   {x:lamb,y:lamb.map(t=>Math.cos(t*Math.PI/180)*100),name:'Lambertian',line:{color:'#94a3b8',dash:'dash',width:1}}],
+  {...lo,xaxis:{title:'θ (°)',zeroline:true,gridcolor:'#f1f5f9'},yaxis:{title:'Y/Y₀ (%)',gridcolor:'#f1f5f9'}});
+
+// u'v'
+const f0=D.find(r=>r.theta===0);
+Plotly.newPlot('r3',
+  [...PHIS.map(p=>{const d=D.filter(r=>r.phi===p);return{x:d.map(r=>r.up),y:d.map(r=>r.vp),name:'φ='+p+'°',mode:'lines+markers',marker:{size:2},line:{color:cs[p]||'#666',width:1.5}}}),
+   f0?{x:[f0.up],y:[f0.vp],name:'θ=0°',mode:'markers',marker:{size:10,color:'#dc2626',symbol:'star'}}:{}],
+  {...lo,xaxis:{title:"u'",gridcolor:'#f1f5f9'},yaxis:{title:"v'",gridcolor:'#f1f5f9'}});
+
+// Δx,Δy
+const t4=[];
+PHIS.forEach(p=>{const d=D.filter(r=>r.phi===p);
+  t4.push({x:d.map(r=>r.theta),y:d.map(r=>r.dx),name:'Δx φ='+p+'°',line:{color:cs[p]||'#666',width:1.5}});
+  t4.push({x:d.map(r=>r.theta),y:d.map(r=>r.dy),name:'Δy φ='+p+'°',line:{color:cs[p]||'#666',width:1.5,dash:'dot'}});
+});
+Plotly.newPlot('r4',t4,{...lo,xaxis:{title:'θ (°)',zeroline:true,gridcolor:'#f1f5f9'},yaxis:{title:'Δx, Δy',gridcolor:'#f1f5f9'}});
+
+// CIE x,y
+const t5=[];
+PHIS.forEach(p=>{const d=D.filter(r=>r.phi===p);
+  t5.push({x:d.map(r=>r.theta),y:d.map(r=>r.x),name:'x φ='+p+'°',line:{color:cs[p]||'#666',width:1.5}});
+  t5.push({x:d.map(r=>r.theta),y:d.map(r=>r.y),name:'y φ='+p+'°',line:{color:cs[p]||'#666',width:1.5,dash:'dot'}});
+});
+Plotly.newPlot('r5',t5,{...lo,xaxis:{title:'θ (°)',zeroline:true,gridcolor:'#f1f5f9'},yaxis:{title:'CIE x, y',gridcolor:'#f1f5f9'}});
+<\/script>
+</body></html>`;
+
+  downloadBlob(html,'text/html','oled_viewing_angle_report.html');
 }
 
-// Drag and drop
+function downloadBlob(content,type,filename){
+  const blob=new Blob([content],{type});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+}
+
+// ── Drag & Drop ──
 const dz=document.getElementById('dropZone');
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.style.borderColor='var(--accent)'});
 dz.addEventListener('dragleave',()=>dz.style.borderColor='');
 dz.addEventListener('drop',e=>{e.preventDefault();dz.style.borderColor='';
-  const file=e.dataTransfer.files[0];if(file){
-    const r=new FileReader();r.onload=ev=>{try{loadData(parseCSV(ev.target.result))}catch(err){alert(err.message)}};
-    r.readAsText(file)}});
+  const file=e.dataTransfer.files[0];
+  if(file){const r=new FileReader();r.onload=ev=>{try{loadData(parseCSV(ev.target.result))}catch(err){alert(err.message)}};r.readAsText(file)}
+});
+
+// ── Auto-load on page open ──
+window.addEventListener('DOMContentLoaded', ()=>{ loadRemoteCSV(); });
 </script>
 </body>
 </html>
