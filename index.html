@@ -95,6 +95,26 @@ select{background:var(--bg);color:var(--text);border:1px solid var(--border);bor
     <div class="pc"><h4 data-i18n="p5">Δx, Δy vs θ</h4><div id="plot5" style="height:250px"></div></div>
     <div class="pc"><h4 data-i18n="p6">Color Shift Direction</h4><div id="plot6" style="height:250px"></div></div>
   </div>
+  <!-- 3D Section -->
+  <div class="viz">
+    <div class="pc"><h4>3D Δu'v' Surface (θ × φ)</h4>
+      <select id="metric3d" onchange="replot3d()" style="margin:4px 8px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:3px;padding:2px 6px;font-size:10px">
+        <option value="duv">Δu'v'</option><option value="du">Δu'</option><option value="dv">Δv'</option>
+        <option value="Yrel">Y/Y₀</option><option value="dYpct">ΔY%</option>
+      </select>
+      <div id="plot3d" style="height:350px"></div>
+    </div>
+    <div class="pc"><h4>Polar Heatmap (Δu'v')</h4><div id="plotPolar2d" style="height:350px"></div></div>
+  </div>
+  <!-- Summary Table -->
+  <div class="pc" style="grid-column:1/-1" id="summarySection">
+    <h4 data-i18n="summary">θ-wise Summary Statistics</h4>
+    <div style="overflow-x:auto;font-size:10px;font-family:monospace" id="summaryTable"></div>
+  </div>
+  <!-- Report Export -->
+  <div style="text-align:center;margin:8px 0">
+    <button class="btn btn-p" onclick="exportReport()" style="padding:8px 20px;font-size:12px" data-i18n="report">📄 Export Standalone HTML Report</button>
+  </div>
 </div>
 </div>
 
@@ -280,6 +300,8 @@ function replot(){
   Plotly.newPlot('plot6',t6,{...lo,xaxis:{...lo.xaxis,title:"Δu'"},yaxis:{...lo.yaxis,title:"Δv'"}});
 
   updateStats();
+  replot3d();
+  buildSummary();
 }
 
 function loadData(rows){
@@ -355,6 +377,111 @@ Object.entries(PALETTES).forEach(([name,colors])=>{
     sw.classList.add('active');if(PROCESSED.length)replot();};
   palRow.appendChild(sw);
 });
+
+// === 3D Surface Plot ===
+function replot3d(){
+  if(!PROCESSED.length)return;
+  const dark=document.documentElement.dataset.theme==='dark';
+  const bg=dark?'#161b22':'#f6f8fa',fg=dark?'#c9d1d9':'#24292f';
+  const metric=document.getElementById('metric3d').value;
+  const phis=[...new Set(PROCESSED.map(r=>r.phi))].sort((a,b)=>a-b);
+  const thetas=[...new Set(PROCESSED.map(r=>r.theta))].sort((a,b)=>a-b);
+  const lookup=new Map();PROCESSED.forEach(r=>lookup.set(r.phi+'_'+r.theta,r));
+  const z=phis.map(p=>thetas.map(t=>{const r=lookup.get(p+'_'+t);return r?r[metric]||0:0}));
+  Plotly.newPlot('plot3d',[{type:'surface',z,x:thetas,y:phis,colorscale:'Portland',
+    colorbar:{title:metric,titlefont:{size:10},tickfont:{size:9}}}],
+    {paper_bgcolor:bg,plot_bgcolor:bg,font:{color:fg,size:10},margin:{l:40,r:20,t:10,b:40},
+     scene:{xaxis:{title:'θ (°)'},yaxis:{title:'φ (°)'},zaxis:{title:metric},
+       bgcolor:bg}});
+
+  // Polar heatmap (2D filled contour in polar)
+  const rVals=[],thetaVals=[],cVals=[];
+  PROCESSED.forEach(r=>{rVals.push(r.theta);thetaVals.push(r.phi);cVals.push(r.duv)});
+  Plotly.newPlot('plotPolar2d',[{type:'scatterpolar',mode:'markers',r:rVals,theta:thetaVals,
+    marker:{size:4,color:cVals,colorscale:'Portland',cmin:0,
+      cmax:Math.max(...PROCESSED.map(r=>r.duv)),colorbar:{title:"Δu'v'",len:.7,tickfont:{size:9}}},
+    text:PROCESSED.map(r=>'φ='+r.phi+'° θ='+r.theta+'° Δu\'v\'='+r.duv.toFixed(5))}],
+    {paper_bgcolor:bg,font:{color:fg,size:10},margin:{l:30,r:30,t:10,b:30},
+     polar:{bgcolor:bg,radialaxis:{gridcolor:dark?'#30363d':'#d0d7de',color:fg},
+       angularaxis:{gridcolor:dark?'#30363d':'#d0d7de',color:fg}}});
+}
+
+// === Summary Table ===
+function buildSummary(){
+  if(!PROCESSED.length){document.getElementById('summaryTable').innerHTML='';return;}
+  const thetaMap=new Map();
+  PROCESSED.forEach(r=>{if(!thetaMap.has(r.theta))thetaMap.set(r.theta,[]);thetaMap.get(r.theta).push(r)});
+  const rows=Array.from(thetaMap.entries()).sort((a,b)=>a[0]-b[0]).filter(([t])=>t%5===0).map(([theta,list])=>{
+    const mean=list.reduce((s,r)=>s+r.duv,0)/list.length;
+    const max=Math.max(...list.map(r=>r.duv));
+    const sorted=[...list].sort((a,b)=>a.duv-b.duv);
+    const p95=sorted[Math.min(sorted.length-1,Math.ceil(.95*sorted.length)-1)].duv;
+    const aniso=max-Math.min(...list.map(r=>r.duv));
+    const worst=list.reduce((m,r)=>r.duv>m.duv?r:m,list[0]);
+    const minY=Math.min(...list.map(r=>r.Yrel));
+    return`<tr><td>${theta}°</td><td>${mean.toFixed(5)}</td><td>${max.toFixed(5)}</td>
+      <td>${p95.toFixed(5)}</td><td>${aniso.toFixed(5)}</td><td>${worst.phi}°</td>
+      <td>${(minY*100).toFixed(1)}%</td></tr>`;
+  }).join('');
+  document.getElementById('summaryTable').innerHTML=
+    `<table style="width:100%;border-collapse:collapse"><tr style="border-bottom:1px solid var(--border)">
+    <th style="text-align:left;padding:3px">θ</th><th>Mean Δu'v'</th><th>Max</th><th>P95</th>
+    <th>Aniso</th><th>Worst φ</th><th>Min Y/Y₀</th></tr>${rows}</table>`;
+}
+
+// === HTML Report Export ===
+function exportReport(){
+  if(!PROCESSED.length){alert('No data');return;}
+  const stats=[];
+  const thetaMap=new Map();
+  PROCESSED.forEach(r=>{if(!thetaMap.has(r.theta))thetaMap.set(r.theta,[]);thetaMap.get(r.theta).push(r)});
+  Array.from(thetaMap.entries()).sort((a,b)=>a[0]-b[0]).filter(([t])=>t%10===0).forEach(([theta,list])=>{
+    stats.push({theta,mean:+(list.reduce((s,r)=>s+r.duv,0)/list.length).toFixed(5),
+      max:+Math.max(...list.map(r=>r.duv)).toFixed(5),
+      minY:+(Math.min(...list.map(r=>r.Yrel))*100).toFixed(1)});
+  });
+  const maxDuv=Math.max(...PROCESSED.map(r=>r.duv));
+  const at45=PROCESSED.filter(r=>r.theta===45),at60=PROCESSED.filter(r=>r.theta===60);
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>OLED Viewing Angle Report</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"><\/script>
+<style>body{font-family:system-ui;max-width:1000px;margin:0 auto;padding:20px;background:#f8fafc;color:#0f172a}
+.kpi{display:inline-block;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:12px 18px;margin:4px;text-align:center}
+.kpi b{display:block;font-size:18px;color:#0969da}.kpi small{color:#64748b;font-size:11px}
+table{width:100%;border-collapse:collapse;font-size:12px;margin:12px 0}th,td{padding:4px 8px;border-bottom:1px solid #e2e8f0;text-align:left}
+h1{font-size:24px}h2{font-size:18px;margin:16px 0 8px;color:#334155}</style></head><body>
+<h1>OLED Viewing Angle Report</h1>
+<p>Generated: ${new Date().toISOString().slice(0,10)}</p>
+<div>
+<div class="kpi"><small>Max Δu'v'</small><b>${maxDuv.toFixed(5)}</b></div>
+<div class="kpi"><small>Δu'v' @45°</small><b>${at45.length?Math.max(...at45.map(r=>r.duv)).toFixed(5):'—'}</b></div>
+<div class="kpi"><small>Δu'v' @60°</small><b>${at60.length?Math.max(...at60.map(r=>r.duv)).toFixed(5):'—'}</b></div>
+<div class="kpi"><small>Y @60° min</small><b>${at60.length?(Math.min(...at60.map(r=>r.Yrel))*100).toFixed(1)+'%':'—'}</b></div>
+</div>
+<h2>Δu'v' vs θ</h2><div id="c1" style="height:300px"></div>
+<h2>Luminance Roll-off</h2><div id="c2" style="height:300px"></div>
+<h2>Summary by θ</h2>
+<table><tr><th>θ</th><th>Mean Δu'v'</th><th>Max Δu'v'</th><th>Min Y/Y₀</th></tr>
+${stats.map(s=>`<tr><td>${s.theta}°</td><td>${s.mean}</td><td>${s.max}</td><td>${s.minY}%</td></tr>`).join('')}
+</table>
+<h2>Full Data (${PROCESSED.length} points)</h2>
+<details><summary>Show CSV</summary><pre style="font-size:9px;max-height:300px;overflow:auto">${
+  'phi,theta,duv,Yrel,du,dv\\n'+PROCESSED.map(r=>[r.phi,r.theta,r.duv.toFixed(6),r.Yrel.toFixed(4),r.du.toFixed(6),r.dv.toFixed(6)].join(',')).join('\\n')
+}</pre></details>
+<script>
+const D=${JSON.stringify(PROCESSED.map(r=>({phi:r.phi,theta:r.theta,duv:r.duv,Yrel:r.Yrel})))};
+const PHIS=[...new Set(D.map(r=>r.phi))].sort((a,b)=>a-b);
+const cs=['#58a6ff','#f78166','#3fb950','#d2a8ff','#f0883e','#a5d6ff','#ff7b72','#7ee787'];
+Plotly.newPlot('c1',PHIS.map((p,i)=>{const d=D.filter(r=>r.phi===p);
+return{x:d.map(r=>r.theta),y:d.map(r=>r.duv),name:'φ='+p+'°',type:'scatter',line:{color:cs[i%8]}}}),
+{margin:{l:50,r:20,t:10,b:40},xaxis:{title:'θ (°)'},yaxis:{title:"Δu'v'"}});
+Plotly.newPlot('c2',PHIS.map((p,i)=>{const d=D.filter(r=>r.phi===p);
+return{x:d.map(r=>r.theta),y:d.map(r=>r.Yrel*100),name:'φ='+p+'°',type:'scatter',line:{color:cs[i%8]}}}),
+{margin:{l:50,r:20,t:10,b:40},xaxis:{title:'θ (°)'},yaxis:{title:'Y/Y₀ (%)'}});
+<\/script></body></html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='oled_viewing_angle_report.html';a.click();
+}
 
 // Drag and drop
 const dz=document.getElementById('dropZone');
