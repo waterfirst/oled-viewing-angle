@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OLED Viewing Angle Analyzer</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<style>
+:root{--bg:#0d1117;--card:#161b22;--text:#c9d1d9;--accent:#58a6ff;--accent2:#f78166;--border:#30363d;--green:#3fb950;--red:#f85149;--dim:#8b949e}
+[data-theme="light"]{--bg:#fff;--card:#f6f8fa;--text:#24292f;--accent:#0969da;--accent2:#cf222e;--border:#d0d7de;--green:#1a7f37;--red:#cf222e;--dim:#656d76}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.hdr{background:var(--card);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100}
+.hdr h1{font-size:15px;font-weight:600}.hdr h1 span{color:var(--accent)}
+.tgl{display:flex;gap:6px}
+.btn{background:var(--border);color:var(--text);border:none;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:11px;font-weight:500}
+.btn:hover{background:var(--accent);color:#fff}
+.btn-p{background:var(--green);color:#fff}
+.main{max-width:1400px;margin:0 auto;padding:12px;display:grid;grid-template-columns:280px 1fr;gap:12px}
+@media(max-width:900px){.main{grid-template-columns:1fr}}
+.side{display:flex;flex-direction:column;gap:10px}
+.pnl{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:12px}
+.pnl h3{font-size:11px;font-weight:600;margin-bottom:8px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px}
+.pnl p{font-size:10px;color:var(--dim);line-height:1.4;margin-bottom:6px}
+.stat{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:10px}
+.stat-item{background:var(--bg);padding:4px 6px;border-radius:3px}
+.stat-item label{color:var(--dim);font-size:9px}
+.stat-item .val{font-weight:700;color:var(--accent2);font-family:monospace;font-size:12px}
+.content{display:flex;flex-direction:column;gap:10px}
+.viz{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:1100px){.viz{grid-template-columns:1fr}}
+.pc{background:var(--card);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.pc h4{font-size:10px;font-weight:600;padding:6px 10px;border-bottom:1px solid var(--border);color:var(--accent);text-transform:uppercase;letter-spacing:.4px}
+select{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:4px 6px;font-size:11px;width:100%;margin-bottom:6px}
+.pal-row{display:flex;gap:4px;margin-bottom:6px}
+.pal-swatch{width:24px;height:16px;border-radius:2px;cursor:pointer;border:2px solid transparent}
+.pal-swatch.active{border-color:var(--accent)}
+.file-area{border:2px dashed var(--border);border-radius:6px;padding:16px;text-align:center;cursor:pointer;font-size:11px;color:var(--dim);transition:border-color .2s}
+.file-area:hover{border-color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <h1><span>&#x1F4CA;</span> <span data-i18n="title">OLED Viewing Angle Analyzer</span></h1>
+  <div class="tgl">
+    <button class="btn" onclick="toggleLang()" id="langBtn">한국어</button>
+    <button class="btn" onclick="toggleTheme()" id="themeBtn">&#x2600; Light</button>
+    <button class="btn" onclick="exportCSV()">&#x2B07; CSV</button>
+  </div>
+</div>
+<div class="main">
+<div class="side">
+  <div class="pnl">
+    <h3 data-i18n="data">Data Source</h3>
+    <div class="file-area" id="dropZone" onclick="document.getElementById('fileIn').click()">
+      <p data-i18n="drop">Drop CSV or click to upload<br><span style="font-size:9px">phi, theta, Y, x, y</span></p>
+      <input type="file" id="fileIn" accept=".csv,.txt" style="display:none" onchange="loadFile(event)">
+    </div>
+    <button class="btn btn-p" style="width:100%;margin-top:6px" onclick="useSample()" data-i18n="sample">Load Sample Data</button>
+    <button class="btn" style="width:100%;margin-top:4px" onclick="resetAll()" data-i18n="reset">Reset</button>
+  </div>
+  <div class="pnl">
+    <h3 data-i18n="palette">Color Palette</h3>
+    <div class="pal-row" id="palRow"></div>
+    <select id="phiSel" onchange="replot()"></select>
+  </div>
+  <div class="pnl">
+    <h3 data-i18n="stats">Statistics (Front → 60°)</h3>
+    <div class="stat" id="statBox">
+      <div class="stat-item"><label>Max Δu'v'</label><div class="val" id="sMaxDuv">—</div></div>
+      <div class="stat-item"><label>Avg Δu'v'</label><div class="val" id="sAvgDuv">—</div></div>
+      <div class="stat-item"><label>Y drop @60°</label><div class="val" id="sYdrop">—</div></div>
+      <div class="stat-item"><label>Max shift φ</label><div class="val" id="sMaxPhi">—</div></div>
+      <div class="stat-item"><label>Δx range</label><div class="val" id="sDxRange">—</div></div>
+      <div class="stat-item"><label>Δy range</label><div class="val" id="sDyRange">—</div></div>
+    </div>
+  </div>
+  <div class="pnl">
+    <h3 data-i18n="spec">Spec Compliance</h3>
+    <div id="specBox" style="font-size:10px">
+      <p>Δu'v' < 0.02 @ 45°: <span id="spec1" style="font-weight:700">—</span></p>
+      <p>Δu'v' < 0.04 @ 60°: <span id="spec2" style="font-weight:700">—</span></p>
+      <p>Y ratio > 50% @ 60°: <span id="spec3" style="font-weight:700">—</span></p>
+    </div>
+  </div>
+</div>
+<div class="content">
+  <div class="viz">
+    <div class="pc"><h4 data-i18n="p1">Δu'v' vs θ (All Azimuths)</h4><div id="plot1" style="height:280px"></div></div>
+    <div class="pc"><h4 data-i18n="p2">CIE u'v' Chromaticity Shift</h4><div id="plot2" style="height:280px"></div></div>
+    <div class="pc"><h4 data-i18n="p3">Luminance Roll-off</h4><div id="plot3" style="height:280px"></div></div>
+    <div class="pc"><h4 data-i18n="p4">Δu'v' Polar Map</h4><div id="plot4" style="height:280px"></div></div>
+  </div>
+  <div class="viz">
+    <div class="pc"><h4 data-i18n="p5">Δx, Δy vs θ</h4><div id="plot5" style="height:250px"></div></div>
+    <div class="pc"><h4 data-i18n="p6">Color Shift Direction</h4><div id="plot6" style="height:250px"></div></div>
+  </div>
+</div>
+</div>
+
+<script>
+const PHIS=[0,45,90,135,180,225,270,315];
+const THETAS=Array.from({length:61},(_,i)=>i);
+const PALETTES={
+  thermal:['#001428','#2646A0','#32A0D2','#F5DC50','#DC2D23'],
+  viridis:['#440154','#3B528B','#21918C','#5EC962','#FDE725'],
+  blueRed:['#2563EB','#E2E8F0','#DC2626'],
+  coolwarm:['#3B4CC0','#DDDDDD','#B40426']
+};
+const PHI_COLORS=['#58a6ff','#f78166','#3fb950','#d2a8ff','#f0883e','#a5d6ff','#ff7b72','#7ee787'];
+let DATA=[], PROCESSED=[], currentPalette='thermal';
+
+const i18n={
+  en:{title:"OLED Viewing Angle Analyzer",data:"Data Source",drop:"Drop CSV or click to upload",
+    sample:"Load Sample Data",reset:"Reset",palette:"Color Palette",stats:"Statistics (Front → 60°)",
+    spec:"Spec Compliance",p1:"Δu'v' vs θ (All Azimuths)",p2:"CIE u'v' Chromaticity Shift",
+    p3:"Luminance Roll-off",p4:"Δu'v' Polar Map",p5:"Δx, Δy vs θ",p6:"Color Shift Direction"},
+  ko:{title:"OLED 시야각 색좌표 분석기",data:"데이터 소스",drop:"CSV 파일을 드래그하거나 클릭",
+    sample:"샘플 데이터 로드",reset:"초기화",palette:"색상 팔레트",stats:"통계 (정면 → 60°)",
+    spec:"스펙 준수 여부",p1:"Δu'v' vs θ (전 방위)",p2:"CIE u'v' 색좌표 이동",
+    p3:"휘도 감쇠",p4:"Δu'v' 극좌표",p5:"Δx, Δy vs θ",p6:"색 이동 방향"}
+};
+
+function toggleLang(){
+  const h=document.documentElement,l=h.dataset.lang==='en'?'ko':'en';
+  h.dataset.lang=l;document.getElementById('langBtn').textContent=l==='en'?'한국어':'English';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.dataset.i18n;if(i18n[l][k])el.textContent=i18n[l][k]});
+}
+function toggleTheme(){
+  const h=document.documentElement,t=h.dataset.theme==='dark'?'light':'dark';
+  h.dataset.theme=t;document.getElementById('themeBtn').innerHTML=t==='dark'?'&#x2600; Light':'&#x1F319; Dark';
+  if(PROCESSED.length)replot();
+}
+
+function generateSample(){
+  const rows=[];
+  for(const phi of PHIS){
+    const rad=phi*Math.PI/180;
+    for(const theta of THETAS){
+      const t=theta/60,tc=t**1.65;
+      const dx=.0015*tc+.0065*tc*Math.cos(rad+.6)+Math.cos(rad)*.0006*t;
+      const dy=-.001*tc+.005*tc*Math.sin(rad-.4)+Math.sin(rad)*.0005*t;
+      const yRoll=1-.34*t**1.35-.04*Math.cos(rad-Math.PI/5)*t**1.2;
+      rows.push({phi,theta,Y:+(500*yRoll).toFixed(3),x:+(.305+dx).toFixed(6),y:+(.322+dy).toFixed(6)});
+    }
+  }
+  return rows;
+}
+
+function xyToUpVp(x,y){const d=-2*x+12*y+3;return{up:4*x/d,vp:9*y/d}}
+
+function preprocess(rows){
+  const conv=rows.map(r=>({...r,...xyToUpVp(r.x,r.y)})).sort((a,b)=>a.phi-b.phi||a.theta-b.theta);
+  const front=conv.filter(r=>r.theta===0);
+  const u0=front.reduce((s,r)=>s+r.up,0)/front.length;
+  const v0=front.reduce((s,r)=>s+r.vp,0)/front.length;
+  const Y0=front.reduce((s,r)=>s+r.Y,0)/front.length;
+  return conv.map(r=>{
+    const du=r.up-u0,dv=r.vp-v0,duv=Math.sqrt(du*du+dv*dv);
+    const dx=r.x-front[0].x,dy=r.y-front[0].y;
+    return{...r,du,dv,duv,Yrel:r.Y/Y0,dYpct:100*(r.Y/Y0-1),dx,dy,
+      shiftAngle:Math.atan2(dv,du)*180/Math.PI,u0,v0,Y0};
+  });
+}
+
+function updateStats(){
+  if(!PROCESSED.length)return;
+  const maxDuv=Math.max(...PROCESSED.map(r=>r.duv));
+  const avgDuv=PROCESSED.filter(r=>r.theta>0).reduce((s,r)=>s+r.duv,0)/PROCESSED.filter(r=>r.theta>0).length;
+  const at60=PROCESSED.filter(r=>r.theta===60);
+  const yDrop=at60.length?Math.min(...at60.map(r=>r.Yrel)):0;
+  const maxPhi=PROCESSED.reduce((p,r)=>r.duv>p.duv?r:p,PROCESSED[0]);
+  const dxs=PROCESSED.map(r=>r.dx),dys=PROCESSED.map(r=>r.dy);
+
+  document.getElementById('sMaxDuv').textContent=maxDuv.toFixed(4);
+  document.getElementById('sAvgDuv').textContent=avgDuv.toFixed(4);
+  document.getElementById('sYdrop').textContent=((1-yDrop)*100).toFixed(1)+'%';
+  document.getElementById('sMaxPhi').textContent=maxPhi.phi+'° @θ='+maxPhi.theta+'°';
+  document.getElementById('sDxRange').textContent=(Math.max(...dxs)-Math.min(...dxs)).toFixed(5);
+  document.getElementById('sDyRange').textContent=(Math.max(...dys)-Math.min(...dys)).toFixed(5);
+
+  // Spec compliance
+  const at45=PROCESSED.filter(r=>r.theta===45);
+  const maxDuv45=at45.length?Math.max(...at45.map(r=>r.duv)):0;
+  const maxDuv60=at60.length?Math.max(...at60.map(r=>r.duv)):0;
+  const minYrel60=at60.length?Math.min(...at60.map(r=>r.Yrel)):0;
+  const s1=document.getElementById('spec1'),s2=document.getElementById('spec2'),s3=document.getElementById('spec3');
+  s1.textContent=maxDuv45<.02?'PASS ✓':'FAIL ✗ ('+maxDuv45.toFixed(4)+')';
+  s1.style.color=maxDuv45<.02?'var(--green)':'var(--red)';
+  s2.textContent=maxDuv60<.04?'PASS ✓':'FAIL ✗ ('+maxDuv60.toFixed(4)+')';
+  s2.style.color=maxDuv60<.04?'var(--green)':'var(--red)';
+  s3.textContent=minYrel60>.5?'PASS ✓':'FAIL ✗ ('+(minYrel60*100).toFixed(1)+'%)';
+  s3.style.color=minYrel60>.5?'var(--green)':'var(--red)';
+}
+
+function replot(){
+  if(!PROCESSED.length)return;
+  const dark=document.documentElement.dataset.theme==='dark';
+  const bg=dark?'#161b22':'#f6f8fa',fg=dark?'#c9d1d9':'#24292f',grid=dark?'#30363d':'#d0d7de';
+  const lo={paper_bgcolor:bg,plot_bgcolor:bg,font:{color:fg,size:10},margin:{l:45,r:15,t:10,b:35},
+    xaxis:{gridcolor:grid},yaxis:{gridcolor:grid},showlegend:true,legend:{font:{size:8},x:.7,y:.98}};
+
+  const selPhi=document.getElementById('phiSel').value;
+  const phis=selPhi==='all'?PHIS:[+selPhi];
+
+  // Plot 1: Δu'v' vs θ
+  const traces1=phis.map((phi,i)=>{
+    const d=PROCESSED.filter(r=>r.phi===phi);
+    return{x:d.map(r=>r.theta),y:d.map(r=>r.duv),name:'φ='+phi+'°',type:'scatter',mode:'lines',
+      line:{color:PHI_COLORS[PHIS.indexOf(phi)%8],width:2}};
+  });
+  // Add spec lines
+  traces1.push({x:[0,60],y:[.02,.02],name:'Spec @45°',mode:'lines',line:{color:'#f85149',dash:'dot',width:1}});
+  traces1.push({x:[0,60],y:[.04,.04],name:'Spec @60°',mode:'lines',line:{color:'#f8514988',dash:'dot',width:1}});
+  Plotly.newPlot('plot1',traces1,{...lo,xaxis:{...lo.xaxis,title:'θ (°)'},yaxis:{...lo.yaxis,title:"Δu'v'"}});
+
+  // Plot 2: u'v' chromaticity
+  const traces2=phis.map((phi,i)=>{
+    const d=PROCESSED.filter(r=>r.phi===phi);
+    return{x:d.map(r=>r.up),y:d.map(r=>r.vp),name:'φ='+phi+'°',type:'scatter',mode:'lines+markers',
+      marker:{size:3},line:{color:PHI_COLORS[PHIS.indexOf(phi)%8],width:1.5}};
+  });
+  // Front point
+  const f=PROCESSED[0];
+  traces2.push({x:[f.u0],y:[f.v0],name:'Front',mode:'markers',marker:{size:10,color:'#f85149',symbol:'star'}});
+  Plotly.newPlot('plot2',traces2,{...lo,xaxis:{...lo.xaxis,title:"u'"},yaxis:{...lo.yaxis,title:"v'"}});
+
+  // Plot 3: Luminance roll-off
+  const traces3=phis.map((phi,i)=>{
+    const d=PROCESSED.filter(r=>r.phi===phi);
+    return{x:d.map(r=>r.theta),y:d.map(r=>r.Yrel*100),name:'φ='+phi+'°',type:'scatter',mode:'lines',
+      line:{color:PHI_COLORS[PHIS.indexOf(phi)%8],width:2}};
+  });
+  // Lambertian reference
+  const lamb=THETAS.map(t=>({t,y:Math.cos(t*Math.PI/180)*100}));
+  traces3.push({x:lamb.map(l=>l.t),y:lamb.map(l=>l.y),name:'Lambertian',mode:'lines',
+    line:{color:'#8b949e',dash:'dash',width:1}});
+  Plotly.newPlot('plot3',traces3,{...lo,xaxis:{...lo.xaxis,title:'θ (°)'},yaxis:{...lo.yaxis,title:'Y / Y₀ (%)'}});
+
+  // Plot 4: Polar map of Δu'v'
+  const polarData=PHIS.map(phi=>{
+    const d=PROCESSED.filter(r=>r.phi===phi);
+    return{theta:d.map(r=>r.phi),r:d.map(r=>r.duv),name:'θ='+d.map(r=>r.theta).join(','),
+      type:'scatterpolar',mode:'markers',marker:{size:d.map(r=>2+r.theta/5),
+      color:d.map(r=>r.duv),colorscale:'Portland',cmin:0,cmax:Math.max(...PROCESSED.map(r=>r.duv))}};
+  });
+  // Simplified: just show max per azimuth
+  const polarSimple=PHIS.map(phi=>{
+    const d=PROCESSED.filter(r=>r.phi===phi);
+    const maxD=d.reduce((p,r)=>r.duv>p.duv?r:p,d[0]);
+    return{phi,maxDuv:maxD.duv,atTheta:maxD.theta};
+  });
+  Plotly.newPlot('plot4',[{
+    type:'scatterpolar',mode:'lines+markers',
+    theta:[...polarSimple.map(p=>p.phi),polarSimple[0].phi],
+    r:[...polarSimple.map(p=>p.maxDuv),polarSimple[0].maxDuv],
+    name:'Max Δu\'v\'',fill:'toself',fillcolor:dark?'rgba(88,166,255,0.1)':'rgba(9,105,218,0.1)',
+    line:{color:'var(--accent)',width:2},marker:{size:8}
+  }],{...lo,polar:{bgcolor:bg,angularaxis:{gridcolor:grid,color:fg},radialaxis:{gridcolor:grid,color:fg}}});
+
+  // Plot 5: Δx, Δy vs θ
+  const traces5=[];
+  phis.forEach((phi,i)=>{
+    const d=PROCESSED.filter(r=>r.phi===phi);
+    traces5.push({x:d.map(r=>r.theta),y:d.map(r=>r.dx),name:'Δx φ='+phi+'°',type:'scatter',mode:'lines',
+      line:{color:PHI_COLORS[PHIS.indexOf(phi)%8],width:1.5}});
+    traces5.push({x:d.map(r=>r.theta),y:d.map(r=>r.dy),name:'Δy φ='+phi+'°',type:'scatter',mode:'lines',
+      line:{color:PHI_COLORS[PHIS.indexOf(phi)%8],width:1.5,dash:'dot'}});
+  });
+  Plotly.newPlot('plot5',traces5,{...lo,xaxis:{...lo.xaxis,title:'θ (°)'},yaxis:{...lo.yaxis,title:'Δx, Δy'}});
+
+  // Plot 6: Shift direction (du vs dv quiver-like)
+  const t6=phis.map((phi,i)=>{
+    const d=PROCESSED.filter(r=>r.phi===phi&&r.theta>0&&r.theta%10===0);
+    return{x:d.map(r=>r.du),y:d.map(r=>r.dv),text:d.map(r=>'φ='+r.phi+'° θ='+r.theta+'°'),
+      name:'φ='+phi+'°',type:'scatter',mode:'markers+text',textposition:'top center',textfont:{size:7},
+      marker:{size:d.map(r=>4+r.theta/10),color:PHI_COLORS[PHIS.indexOf(phi)%8]}};
+  });
+  t6.push({x:[0],y:[0],name:'Front',mode:'markers',marker:{size:10,color:'#f85149',symbol:'x'}});
+  Plotly.newPlot('plot6',t6,{...lo,xaxis:{...lo.xaxis,title:"Δu'"},yaxis:{...lo.yaxis,title:"Δv'"}});
+
+  updateStats();
+}
+
+function loadData(rows){
+  DATA=rows;PROCESSED=preprocess(rows);
+  // Populate phi selector
+  const sel=document.getElementById('phiSel');
+  sel.innerHTML='<option value="all">All Azimuths</option>';
+  const uniquePhis=[...new Set(rows.map(r=>r.phi))].sort((a,b)=>a-b);
+  uniquePhis.forEach(p=>{sel.innerHTML+=`<option value="${p}">φ = ${p}°</option>`});
+  replot();
+}
+
+function useSample(){loadData(generateSample())}
+
+function loadFile(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const rows=parseCSV(ev.target.result);
+      loadData(rows);
+    }catch(err){alert('CSV Error: '+err.message)}
+  };
+  reader.readAsText(file);
+}
+
+function parseCSV(text){
+  const lines=text.trim().split(/\r?\n/).filter(Boolean);
+  const delim=lines[0].includes(';')?';':lines[0].includes('\t')?'\t':',';
+  const hdr=lines[0].split(delim).map(h=>h.trim().toLowerCase());
+  const hasHdr=hdr.some(h=>/^(phi|theta|x|y)$/.test(h));
+  const start=hasHdr?1:0;
+  const ci=hasHdr?{phi:hdr.indexOf('phi'),theta:hdr.indexOf('theta'),
+    Y:hdr.findIndex(h=>h==='y'&&hdr.indexOf('y')!==hdr.lastIndexOf('y')?false:h==='luminance'||h==='y'),
+    x:hdr.indexOf('x'),y:hdr.lastIndexOf('y')}
+    :{phi:0,theta:1,Y:2,x:3,y:4};
+  // Better: find Y=luminance column, x=CIE x, y=CIE y
+  if(hasHdr){
+    ci.Y=hdr.findIndex(h=>h==='luminance'||h==='lum'||(h==='y'&&hdr.indexOf('y')===hdr.lastIndexOf('y')?false:true));
+    if(ci.Y<0)ci.Y=2;
+    ci.x=hdr.indexOf('x');
+    ci.y=hdr.lastIndexOf('y');
+  }
+  return lines.slice(start).map(line=>{
+    const c=line.split(delim).map(s=>s.trim());
+    return{phi:+c[ci.phi],theta:+c[ci.theta],Y:+c[ci.Y],x:+c[ci.x],y:+c[ci.y]};
+  }).filter(r=>!isNaN(r.phi)&&!isNaN(r.theta));
+}
+
+function exportCSV(){
+  if(!PROCESSED.length){alert('No data');return}
+  let csv="phi,theta,Y,x,y,u',v',du',dv',duv,Y_rel,dx,dy\n";
+  PROCESSED.forEach(r=>{csv+=`${r.phi},${r.theta},${r.Y},${r.x},${r.y},${r.up.toFixed(6)},${r.vp.toFixed(6)},${r.du.toFixed(6)},${r.dv.toFixed(6)},${r.duv.toFixed(6)},${r.Yrel.toFixed(4)},${r.dx.toFixed(6)},${r.dy.toFixed(6)}\n`});
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='viewing_angle_analysis.csv';a.click();
+}
+
+function resetAll(){DATA=[];PROCESSED=[];
+  ['plot1','plot2','plot3','plot4','plot5','plot6'].forEach(id=>Plotly.purge(id));
+  document.querySelectorAll('.val').forEach(el=>el.textContent='—');
+  ['spec1','spec2','spec3'].forEach(id=>{document.getElementById(id).textContent='—';document.getElementById(id).style.color=''});
+}
+
+// Palette swatches
+const palRow=document.getElementById('palRow');
+Object.entries(PALETTES).forEach(([name,colors])=>{
+  const sw=document.createElement('div');
+  sw.className='pal-swatch'+(name===currentPalette?' active':'');
+  sw.style.background=`linear-gradient(90deg,${colors.join(',')})`;
+  sw.title=name;sw.onclick=()=>{currentPalette=name;
+    document.querySelectorAll('.pal-swatch').forEach(s=>s.classList.remove('active'));
+    sw.classList.add('active');if(PROCESSED.length)replot();};
+  palRow.appendChild(sw);
+});
+
+// Drag and drop
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.style.borderColor='var(--accent)'});
+dz.addEventListener('dragleave',()=>dz.style.borderColor='');
+dz.addEventListener('drop',e=>{e.preventDefault();dz.style.borderColor='';
+  const file=e.dataTransfer.files[0];if(file){
+    const r=new FileReader();r.onload=ev=>{try{loadData(parseCSV(ev.target.result))}catch(err){alert(err.message)}};
+    r.readAsText(file)}});
+</script>
+</body>
+</html>
