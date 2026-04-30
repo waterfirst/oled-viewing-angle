@@ -56,6 +56,42 @@ Quarto (.qmd)로 보고서를 렌더링하며, 아래 설정을 따른다:
 Inter, Roboto, Arial 같은 범용 폰트 대신 프로젝트 기존 폰트 스택(-apple-system, BlinkMacSystemFont, 'Segoe UI')을 유지한다.
 </frontend_aesthetics>
 
+<session_protocol>
+
+## 세션 종료 프로토콜
+
+세션을 어떻게 종료하느냐가 컨텍스트 관리와 코드 품질에 직결된다.
+모든 세션 종료 시 아래 5단계를 순서대로 수행한다.
+
+### 1. Cleanup (정리)
+- 임시 파일, 테스트 출력물, 디버그 코드를 삭제한다
+- `git status`로 의도하지 않은 변경 사항이 없는지 확인한다
+- node_modules, .knit.md 등 생성된 중간 산출물을 정리한다
+
+### 2. Verify (확인)
+- 변경한 코드가 정상 동작하는지 확인한다 (quarto render, 브라우저 테스트 등)
+- `git diff`로 최종 변경 내역을 리뷰한다
+- 깨진 링크, 누락된 파일, 문법 오류가 없는지 점검한다
+
+### 3. Reflect (배움)
+- 이번 세션에서 발견한 기술적 제약이나 해결 패턴을 기록한다
+  (예: "3자리 hex가 Quarto+ragg에서 에러를 일으킨다")
+- 실수가 있었다면 원인과 방지책을 파악한다
+- 다음에 같은 작업을 더 빠르게 할 수 있는 방법을 메모한다
+
+### 4. Persist (기억)
+- 새로 발견한 규칙이나 제약을 이 CLAUDE.md에 반영한다
+- 진행 중인 작업이 있으면 상태를 파일에 기록한다 (progress.txt, TODO 등)
+- git commit 메시지에 변경의 "왜"를 담는다
+
+### 5. Ship (인계)
+- `git push`로 변경 사항을 원격에 반영한다
+- 다음 세션(또는 다른 에이전트)이 이어받을 수 있도록 컨텍스트를 남긴다:
+  현재 상태, 남은 작업, 주의사항
+- 사용자에게 결과 URL과 변경 요약을 전달한다
+
+</session_protocol>
+
 ## Repository Structure
 
 ```
