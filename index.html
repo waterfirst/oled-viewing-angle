@@ -110,7 +110,7 @@ select{background:var(--bg);color:var(--text);border:1px solid var(--border);bor
   </div>
   <!-- Row 2 -->
   <div class="row">
-    <div class="pc"><div class="pc-title">&#x2462; Luminance Roll-off (Y/Y₀)</div><div id="p3" style="height:280px"></div></div>
+    <div class="pc"><div class="pc-title">&#x2462; Luminance Roll-off (Y/Y₀) <span style="font-size:8px;color:var(--dim);font-weight:400">click to read values</span></div><div id="p3" style="height:280px"></div></div>
     <div class="pc"><div class="pc-title">&#x2463; CIE u'v' Chromaticity</div><div id="p4" style="height:280px"></div></div>
   </div>
   <!-- Row 3 -->
@@ -164,6 +164,33 @@ select{background:var(--bg);color:var(--text);border:1px solid var(--border);bor
 <script>
 const PHI_C={0:'#58a6ff',45:'#f78166',90:'#3fb950',135:'#d2a8ff',180:'#f0883e',225:'#a5d6ff',270:'#ff7b72',315:'#7ee787'};
 let DATA=[],PROC=[],LANG='ko';
+
+/* ── CIE 1976 UCS Spectral Locus (u', v') for 380-700nm ── */
+const CIE1976_GAMUT_UP=[0.2560,0.2## spectral locus data cut for readability];
+/* Full spectral locus in u',v' from 380nm to 700nm (5nm steps) + purple line closure */
+const SPECTRAL_LOCUS=(function(){
+  // CIE 1931 xy spectral locus → convert to u'v'
+  const xyData=[
+    [0.1741,0.0050],[0.1740,0.0050],[0.1738,0.0049],[0.1736,0.0049],[0.1733,0.0048],
+    [0.1726,0.0048],[0.1714,0.0051],[0.1689,0.0069],[0.1644,0.0109],[0.1566,0.0177],
+    [0.1440,0.0297],[0.1241,0.0578],[0.0913,0.1327],[0.0454,0.2950],[0.0082,0.5384],
+    [0.0139,0.7502],[0.0743,0.8338],[0.1142,0.8262],[0.1547,0.8059],[0.1929,0.7816],
+    [0.2296,0.7543],[0.2658,0.7243],[0.3016,0.6923],[0.3373,0.6589],[0.3731,0.6245],
+    [0.4087,0.5896],[0.4441,0.5547],[0.4788,0.5202],[0.5125,0.4866],[0.5448,0.4544],
+    [0.5752,0.4242],[0.6029,0.3965],[0.6270,0.3725],[0.6482,0.3514],[0.6658,0.3340],
+    [0.6801,0.3197],[0.6915,0.3083],[0.7006,0.2993],[0.7079,0.2920],[0.7140,0.2859],
+    [0.7190,0.2809],[0.7230,0.2770],[0.7260,0.2740],[0.7283,0.2717],[0.7300,0.2700],
+    [0.7311,0.2689],[0.7320,0.2680],[0.7327,0.2673],[0.7334,0.2666],[0.7340,0.2660],
+    [0.7344,0.2656],[0.7346,0.2654],[0.7347,0.2653],[0.7347,0.2653],[0.7347,0.2653],
+    [0.7347,0.2653],[0.7347,0.2653],[0.7347,0.2653],[0.7347,0.2653],[0.7347,0.2653],
+    [0.7347,0.2653],[0.7347,0.2653],[0.7347,0.2653],[0.7347,0.2653],[0.7347,0.2653]
+  ];
+  const up=[],vp=[];
+  xyData.forEach(([x,y])=>{const d=-2*x+12*y+3;up.push(4*x/d);vp.push(9*y/d);});
+  // Close with purple line
+  up.push(up[0]); vp.push(vp[0]);
+  return{up,vp};
+})();
 
 /* ── i18n ── */
 function toggleLang(){LANG=LANG==='ko'?'en':'ko';document.getElementById('langBtn').textContent=LANG==='ko'?'English':'한국어';if(PROC.length)updateInsights();}
@@ -249,6 +276,22 @@ function L(extra){
     xaxis:{gridcolor:g,zerolinecolor:g,...(extra?.xaxis||{})},yaxis:{gridcolor:g,zerolinecolor:g,...(extra?.yaxis||{})}};
 }
 function C(phi){return PHI_C[phi]||'#8b949e';}
+
+/* ── P3 vertical marker update ── */
+function updateP3Marker(theta,phis){
+  if(!PROC.length)return;
+  const allThetas=[...new Set(PROC.map(r=>r.theta))].sort((a,b)=>a-b);
+  const snapped=allThetas.reduce((a,b)=>Math.abs(b-theta)<Math.abs(a-theta)?b:a);
+  const pts=phis.map(p=>{const r=PROC.find(x=>x.phi===p&&x.theta===snapped);return r?r.Yrel*100:100;});
+  const traceIdx=phis.length+1; // after phi traces + lambertian
+  Plotly.restyle('p3',{x:[phis.map(()=>snapped)],y:[pts],
+    text:[pts.map((v,i)=>'φ'+phis[i]+'°: '+v.toFixed(1)+'%')]},traceIdx);
+  Plotly.relayout('p3',{
+    'shapes[0].x0':snapped,'shapes[0].x1':snapped,
+    'annotations[0].x':snapped,'annotations[0].text':'θ='+snapped+'°'
+  });
+}
+
 function getPhis(){const s=document.getElementById('phiSel').value;const all=[...new Set(PROC.map(r=>r.phi))].sort((a,b)=>a-b);return s==='all'?all:[+s];}
 
 /* ══════════════════════════════════════ PLOTS ══════════════════════════════════════ */
@@ -263,14 +306,40 @@ function replot(){
   Plotly.newPlot('p1',t1,L({xaxis:{title:'θ (°)'},yaxis:{title:"Δu'v'"}}),{responsive:true});
 
   /* P2: Δu' vs Δv' trajectory — THE KEY CHART */
-  const t2=phis.map(p=>{
+  const singlePhi=phis.length===1;
+  const t2=[];
+  phis.forEach((p,pi)=>{
     const d=PROC.filter(r=>r.phi===p).sort((a,b)=>a.theta-b.theta);
-    return{x:d.map(r=>r.du),y:d.map(r=>r.dv),name:'φ='+p+'°',type:'scatter',mode:'lines+markers',
-      text:d.map(r=>'θ='+r.theta+'°'),hovertemplate:"φ="+p+"° θ=%{text}<br>Δu'=%{x:.5f}<br>Δv'=%{y:.5f}<extra></extra>",
-      marker:{size:d.map(r=>2+Math.abs(r.theta)/8),color:d.map(r=>r.theta),colorscale:'RdBu',cmin:-60,cmax:60,
-        colorbar:p===phis[0]?{title:'θ°',len:.6,x:1.02,thickness:10,tickfont:{size:8}}:undefined,
-        showscale:p===phis[0]},
-      line:{color:C(p),width:1.5}};
+    if(singlePhi){
+      // Single phi: thick gradient line with large markers colored by theta
+      // Draw line segments colored by theta
+      for(let i=0;i<d.length-1;i++){
+        const tNorm=(d[i].theta+60)/120; // 0..1
+        const col=`hsl(${240-tNorm*240},85%,55%)`;
+        t2.push({x:[d[i].du,d[i+1].du],y:[d[i].dv,d[i+1].dv],mode:'lines',
+          line:{color:col,width:3},showlegend:false,hoverinfo:'skip'});
+      }
+      // Markers with full gradient + labels every 10°
+      t2.push({x:d.map(r=>r.du),y:d.map(r=>r.dv),name:'φ='+p+'°',type:'scatter',mode:'markers',
+        text:d.map(r=>'θ='+r.theta+'°'),hovertemplate:"φ="+p+"° %{text}<br>Δu'=%{x:.5f}<br>Δv'=%{y:.5f}<extra></extra>",
+        marker:{size:d.map(r=>r.theta%10===0?10:4),color:d.map(r=>r.theta),
+          colorscale:[[0,'#0000ff'],[0.25,'#00aaff'],[0.5,'#00cc00'],[0.75,'#ffaa00'],[1,'#ff0000']],
+          cmin:-60,cmax:60,showscale:true,
+          colorbar:{title:'θ (°)',len:.7,x:1.02,thickness:12,tickfont:{size:8},
+            tickvals:[-60,-45,-30,-15,0,15,30,45,60]}}});
+      // θ labels every 15°
+      const labels=d.filter(r=>r.theta%15===0);
+      t2.push({x:labels.map(r=>r.du),y:labels.map(r=>r.dv),mode:'text',
+        text:labels.map(r=>r.theta+'°'),textposition:'top right',textfont:{size:8,color:'var(--dim)'},showlegend:false,hoverinfo:'skip'});
+    } else {
+      // Multi phi: thinner lines with gradient markers
+      t2.push({x:d.map(r=>r.du),y:d.map(r=>r.dv),name:'φ='+p+'°',type:'scatter',mode:'lines+markers',
+        text:d.map(r=>'θ='+r.theta+'°'),hovertemplate:"φ="+p+"° %{text}<br>Δu'=%{x:.5f}<br>Δv'=%{y:.5f}<extra></extra>",
+        marker:{size:d.map(r=>2+Math.abs(r.theta)/8),color:d.map(r=>r.theta),colorscale:'RdBu',cmin:-60,cmax:60,
+          colorbar:pi===0?{title:'θ°',len:.6,x:1.02,thickness:10,tickfont:{size:8}}:undefined,
+          showscale:pi===0},
+        line:{color:C(p),width:1.5}});
+    }
   });
   // origin cross
   t2.push({x:[0],y:[0],name:'θ=0°',mode:'markers',marker:{size:12,color:'#f85149',symbol:'cross-thin',line:{width:2,color:'#f85149'}},showlegend:false});
@@ -282,18 +351,53 @@ function replot(){
   });
   Plotly.newPlot('p2',t2,L({xaxis:{title:"Δu'",scaleanchor:'y'},yaxis:{title:"Δv'"}}),{responsive:true});
 
-  /* P3: Y/Y₀ */
+  /* P3: Y/Y₀ with interactive vertical marker */
   const t3=phis.map(p=>{const d=PROC.filter(r=>r.phi===p);
     return{x:d.map(r=>r.theta),y:d.map(r=>r.Yrel*100),name:'φ='+p+'°',line:{color:C(p),width:2}};});
   const lamb=Array.from({length:121},(_,i)=>i-60);
   t3.push({x:lamb,y:lamb.map(t=>Math.cos(t*Math.PI/180)*100),name:'Lambertian',line:{color:'#8b949e',dash:'dash',width:1}});
-  Plotly.newPlot('p3',t3,L({xaxis:{title:'θ (°)'},yaxis:{title:'Y / Y₀ (%)'}}),{responsive:true});
+  // Marker readout trace (initially at θ=0)
+  const markerTheta=0;
+  const markerPts=phis.map(p=>{const r=PROC.find(x=>x.phi===p&&x.theta===markerTheta);return r?r.Yrel*100:100;});
+  t3.push({x:phis.map(()=>markerTheta),y:markerPts,name:'Readout',mode:'markers+text',
+    text:markerPts.map((v,i)=>'φ'+phis[i]+'°: '+v.toFixed(1)+'%'),textposition:'top right',textfont:{size:8},
+    marker:{size:8,color:'#f85149',symbol:'circle'},showlegend:false});
+  const p3layout=L({xaxis:{title:'θ (°)'},yaxis:{title:'Y / Y₀ (%)'},
+    shapes:[{type:'line',x0:markerTheta,x1:markerTheta,y0:0,y1:1,yref:'paper',
+      line:{color:'#f85149',width:1.5,dash:'dash'}}],
+    annotations:[{x:markerTheta,y:1.05,yref:'paper',text:'θ='+markerTheta+'°',showarrow:false,
+      font:{size:10,color:'#f85149'},xanchor:'center'}]});
+  Plotly.newPlot('p3',t3,p3layout,{responsive:true});
+  // Drag interaction via click
+  document.getElementById('p3').on('plotly_click',function(ev){
+    if(!ev.points.length)return;
+    const clickTheta=Math.round(ev.points[0].x);
+    updateP3Marker(clickTheta,phis);
+  });
+  // Also via hover for smooth experience
+  document.getElementById('p3').on('plotly_hover',function(ev){
+    if(!ev.points.length||!ev.event.buttons)return; // only on mouse drag
+    const hTheta=Math.round(ev.points[0].x);
+    updateP3Marker(hTheta,phis);
+  });
 
-  /* P4: u'v' chromaticity */
-  const t4=phis.map(p=>{const d=PROC.filter(r=>r.phi===p);
-    return{x:d.map(r=>r.up),y:d.map(r=>r.vp),name:'φ='+p+'°',mode:'lines+markers',marker:{size:2},line:{color:C(p),width:1.5}};});
+  /* P4: u'v' chromaticity + CIE 1976 gamut */
+  const t4=[];
+  // CIE 1976 spectral locus background
+  t4.push({x:SPECTRAL_LOCUS.up,y:SPECTRAL_LOCUS.vp,name:'CIE 1976 Gamut',mode:'lines',
+    fill:'toself',fillcolor:document.documentElement.dataset.theme==='dark'?'rgba(255,255,255,0.03)':'rgba(0,0,0,0.02)',
+    line:{color:document.documentElement.dataset.theme==='dark'?'rgba(255,255,255,0.25)':'rgba(0,0,0,0.2)',width:1},
+    hoverinfo:'skip'});
+  // Data traces
+  phis.forEach(p=>{const d=PROC.filter(r=>r.phi===p);
+    t4.push({x:d.map(r=>r.up),y:d.map(r=>r.vp),name:'φ='+p+'°',mode:'lines+markers',
+      marker:{size:d.map(r=>2+Math.abs(r.theta)/15),color:d.map(r=>r.theta),colorscale:'RdBu',cmin:-60,cmax:60,
+        showscale:p===phis[0],colorbar:p===phis[0]?{title:'θ°',len:.5,x:1.02,thickness:8,tickfont:{size:7}}:undefined},
+      line:{color:C(p),width:1.5},
+      text:d.map(r=>'θ='+r.theta+'°'),hovertemplate:"φ="+p+"° %{text}<br>u'=%{x:.5f}<br>v'=%{y:.5f}<extra></extra>"});
+  });
   const f0=PROC.find(r=>r.theta===0);
-  if(f0)t4.push({x:[f0.u0],y:[f0.v0],name:'Front',mode:'markers',marker:{size:10,color:'#f85149',symbol:'star'},showlegend:false});
+  if(f0)t4.push({x:[f0.u0],y:[f0.v0],name:'θ=0° (Front)',mode:'markers',marker:{size:12,color:'#f85149',symbol:'star'}});
   Plotly.newPlot('p4',t4,L({xaxis:{title:"u'"},yaxis:{title:"v'"}}),{responsive:true});
 
   /* P5: CIE x,y vs θ */
@@ -667,10 +771,15 @@ Plotly.newPlot('r3',[...PHIS.map(p=>{const d=D.filter(r=>r.phi===p);return{x:d.m
 {x:lb,y:lb.map(t=>Math.cos(t*Math.PI/180)*100),name:'Lambertian',line:{color:'#94a3b8',dash:'dash',width:1}}],
 {...lo,xaxis:{...lo.xaxis,title:'θ (°)'},yaxis:{...lo.yaxis,title:'Y/Y₀ (%)'}});
 
-// R4: u'v'
+// R4: u'v' + CIE 1976 gamut
+const SL=${JSON.stringify({up:SPECTRAL_LOCUS.up,vp:SPECTRAL_LOCUS.vp})};
 const f=D.find(r=>r.theta===0);
-Plotly.newPlot('r4',[...PHIS.map(p=>{const d=D.filter(r=>r.phi===p);return{x:d.map(r=>r.up),y:d.map(r=>r.vp),name:'φ='+p+'°',mode:'lines+markers',marker:{size:2},line:{color:CS[p]||'#666',width:1.5}}}),
-f?{x:[f.up],y:[f.vp],mode:'markers',marker:{size:10,color:'#dc2626',symbol:'star'},showlegend:false}:{}],
+Plotly.newPlot('r4',[
+{x:SL.up,y:SL.vp,name:'CIE 1976',mode:'lines',fill:'toself',fillcolor:'rgba(0,0,0,0.02)',line:{color:'rgba(0,0,0,0.2)',width:1},hoverinfo:'skip'},
+...PHIS.map(p=>{const d=D.filter(r=>r.phi===p);return{x:d.map(r=>r.up),y:d.map(r=>r.vp),name:'φ='+p+'°',mode:'lines+markers',
+marker:{size:d.map(r=>2+Math.abs(r.theta)/15),color:d.map(r=>r.theta),colorscale:'RdBu',cmin:-60,cmax:60,showscale:p===PHIS[0],
+colorbar:p===PHIS[0]?{title:'θ°',len:.5,thickness:8,tickfont:{size:7}}:undefined},line:{color:CS[p]||'#666',width:1.5}}}),
+f?{x:[f.up],y:[f.vp],mode:'markers',marker:{size:10,color:'#dc2626',symbol:'star'},name:'Front'}:{}],
 {...lo,xaxis:{...lo.xaxis,title:"u'"},yaxis:{...lo.yaxis,title:"v'"}});
 
 // R5: x,y
