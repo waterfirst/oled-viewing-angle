@@ -21,6 +21,7 @@ pension 관련 파일이 발견되면 삭제하고 커밋에서 제외한다.
 - Chimera AI (주간 증시): https://github.com/waterfirst/chimera-ai — 매주 보고서를 업로드하고 목차에 반영
 - Alpha Hunter (히든젬): https://github.com/waterfirst/alpha-hunter
 - Insight Lab (인문학x과학): https://github.com/waterfirst/insight-lab
+- Culture Voyager (문화저널): https://github.com/waterfirst/culture-voyager
 
 </instructions>
 
@@ -36,8 +37,26 @@ Quarto (.qmd)로 보고서를 렌더링하며, 아래 설정을 따른다:
 - `dev: ragg_png` — CJK 폰트 렌더링에 필요
 - 폰트: `"Noto Sans CJK KR"` 시스템 폰트를 직접 사용한다. showtext는 Quarto knitr 환경에서 충돌하므로 사용하지 않는다.
 - 색상: 6자리 hex만 사용한다 (`"#aaaaaa"`). 3자리 hex(`"#aaa"`)는 Quarto+ragg 조합에서 "invalid RGB specification" 에러를 발생시킨다.
+- 지도: R `leaflet` 패키지를 사용한다. JS Leaflet 직접 삽입 금지. 참고: https://bigdata-anlysis.tistory.com/34
+- YouTube: Quarto `{{< video >}}` shortcode 대신 직접 `<iframe src="https://www.youtube.com/embed/...">` 사용 (self-contained 모드에서 shortcode 에러 발생)
 
 </technical_stack>
+
+<journal_rules>
+
+## 저널 공통 규칙
+
+모든 저널(Insight Lab, Chimera AI, Alpha Hunter, Culture Voyager)의 목차 페이지는 **발행일 역순**으로 정렬한다.
+- "최신 발행(Published)" 섹션을 최상단에 배치, 최신 → 과거 순
+- 미발행 콘텐츠는 기존 카테고리별 섹션에 유지
+- 새 콘텐츠 발행 시 "최신 발행" 섹션 맨 위에 추가
+
+여행 콘텐츠 필수 요소:
+- R leaflet 기반 여행 궤적 지도 (명소 마커 + Day별 경로 + 범례)
+- 상단 fixed + 하단 CTA "목차로 돌아가기" 버튼
+- 목차 돌아가기 버튼 템플릿: `output/_nav_back.html`
+
+</journal_rules>
 
 <investigate_before_answering>
 코드를 수정하기 전에 반드시 해당 파일을 읽어라.
