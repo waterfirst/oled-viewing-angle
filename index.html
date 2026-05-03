@@ -78,18 +78,49 @@ select{background:var(--bg);color:var(--text);border:1px solid var(--border);bor
   <div class="pnl">
     <h3>Filter</h3>
     <select id="phiSel" onchange="replot()"></select>
+    <div style="margin-top:8px;font-size:9px;color:var(--dim);display:flex;justify-content:space-between">
+      <span>Trust threshold</span><span>Y/Y₀ ≥ <span id="snrVal" style="color:var(--accent2);font-weight:700">5</span>%</span>
+    </div>
+    <input type="range" id="snrSlider" min="0" max="50" value="5" step="1" oninput="updateSnr()" style="width:100%;margin-top:2px">
+    <div style="font-size:8px;color:var(--dim);margin-top:2px;line-height:1.4">저휘도 영역은 측정 노이즈로 인한 색좌표 신뢰도 ↓. 임계값 미만은 회색 점선 처리.</div>
   </div>
   <div class="pnl">
     <h3>Key Metrics</h3>
     <div class="stat">
-      <div class="si"><label>Max Δu'v'</label><div class="v" id="sMaxDuv">—</div></div>
+      <div class="si"><label>Max Δu'v' (trust)</label><div class="v" id="sMaxDuv">—</div></div>
       <div class="si"><label>@ Position</label><div class="v" id="sMaxPos">—</div></div>
+      <div class="si"><label>Effective FOV</label><div class="v" id="sFov">—</div></div>
+      <div class="si"><label>Cutoff θ@50%</label><div class="v" id="sCutoff">—</div></div>
+      <div class="si"><label>Y-weighted Δu'v'</label><div class="v" id="sWDuv">—</div></div>
       <div class="si"><label>Δu'v' @±45°</label><div class="v" id="sDuv45">—</div></div>
       <div class="si"><label>Δu'v' @±60°</label><div class="v" id="sDuv60">—</div></div>
-      <div class="si"><label>Y drop @60°</label><div class="v" id="sYdrop">—</div></div>
       <div class="si"><label>Asymmetry</label><div class="v" id="sAsym">—</div></div>
-      <div class="si"><label>Δx range</label><div class="v" id="sDx">—</div></div>
-      <div class="si"><label>Δy range</label><div class="v" id="sDy">—</div></div>
+    </div>
+  </div>
+  <div class="pnl">
+    <h3>BM + Lens Structure</h3>
+    <svg viewBox="0 0 220 110" style="width:100%;height:auto;background:var(--card2);border-radius:4px">
+      <defs><marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="var(--accent)"/></marker></defs>
+      <path d="M 60 25 Q 110 5 160 25" fill="none" stroke="#58a6ff" stroke-width="1.5"/>
+      <text x="165" y="20" font-size="7" fill="#8b949e">MLA</text>
+      <rect x="20" y="35" width="60" height="4" fill="#8b949e"/>
+      <rect x="140" y="35" width="60" height="4" fill="#8b949e"/>
+      <text x="2" y="40" font-size="7" fill="#8b949e">BM2</text>
+      <rect x="20" y="65" width="55" height="4" fill="#8b949e"/>
+      <rect x="145" y="65" width="55" height="4" fill="#8b949e"/>
+      <text x="2" y="70" font-size="7" fill="#8b949e">BM1</text>
+      <rect x="80" y="92" width="60" height="6" fill="#f78166"/>
+      <text x="2" y="97" font-size="7" fill="#f78166">EML</text>
+      <line x1="110" y1="92" x2="110" y2="20" stroke="#3fb950" stroke-width="0.8" stroke-dasharray="2,1"/>
+      <line x1="110" y1="92" x2="85" y2="20" stroke="#3fb950" stroke-width="0.5" opacity="0.6"/>
+      <line x1="110" y1="92" x2="135" y2="20" stroke="#3fb950" stroke-width="0.5" opacity="0.6"/>
+      <line x1="110" y1="92" x2="60" y2="35" stroke="#f85149" stroke-width="0.5" opacity="0.4" stroke-dasharray="1,1"/>
+      <line x1="110" y1="92" x2="160" y2="35" stroke="#f85149" stroke-width="0.5" opacity="0.4" stroke-dasharray="1,1"/>
+      <text x="115" y="55" font-size="6" fill="#3fb950">정상 광로</text>
+      <text x="20" y="55" font-size="6" fill="#f85149">차단</text>
+    </svg>
+    <div style="font-size:8px;color:var(--dim);margin-top:4px;line-height:1.4">
+      φ=90° 차단 방향에서 BM aperture sidelobe + 렌즈 색수차 → Δu'v' 궤적 복잡화. 신뢰영역(중심) 분석에 집중하세요.
     </div>
   </div>
   <div class="pnl">
@@ -110,7 +141,11 @@ select{background:var(--bg);color:var(--text);border:1px solid var(--border);bor
   </div>
   <!-- Row 2 -->
   <div class="row">
-    <div class="pc"><div class="pc-title">&#x2462; Luminance Roll-off (Y/Y₀) <span style="font-size:8px;color:var(--dim);font-weight:400">click to read values</span></div><div id="p3" style="height:280px"></div></div>
+    <div class="pc"><div class="pc-title">&#x2462; Luminance Roll-off (Y/Y₀)
+      <label style="font-size:8px;font-weight:400;color:var(--dim);cursor:pointer">
+        <input type="checkbox" id="logY" onchange="replot()" style="vertical-align:middle"> Log scale
+      </label>
+    </div><div id="p3" style="height:280px"></div></div>
     <div class="pc"><div class="pc-title">&#x2463; CIE u'v' Chromaticity</div><div id="p4" style="height:280px"></div></div>
   </div>
   <!-- Row 3 -->
@@ -194,6 +229,11 @@ const SPECTRAL_LOCUS=(function(){
 /* ── i18n ── */
 function toggleLang(){LANG=LANG==='ko'?'en':'ko';document.getElementById('langBtn').textContent=LANG==='ko'?'English':'한국어';if(PROC.length)updateInsights();}
 function toggleTheme(){const h=document.documentElement,t=h.dataset.theme==='dark'?'light':'dark';h.dataset.theme=t;document.getElementById('themeBtn').innerHTML=t==='dark'?'&#x2600;':'&#x1F319;';if(PROC.length)replot();}
+
+/* ── SNR (trust) threshold ── */
+function getSnrThreshold(){return (+document.getElementById('snrSlider').value)/100;}
+function updateSnr(){document.getElementById('snrVal').textContent=document.getElementById('snrSlider').value;if(PROC.length){replot();updateStats();updateInsights();}}
+function isTrusted(r){return r.Yrel>=getSnrThreshold();}
 
 /* ── CSV Parse ── */
 function parseCSV(text){
@@ -317,9 +357,15 @@ function replot(){
   if(!PROC.length)return;
   const phis=getPhis(), allPhis=[...new Set(PROC.map(r=>r.phi))].sort((a,b)=>a-b);
 
-  /* P1: Δu'v' vs θ */
-  const t1=phis.map(p=>{const d=PROC.filter(r=>r.phi===p);
-    return{x:d.map(r=>r.theta),y:d.map(r=>r.duv),name:'φ='+p+'°',line:{color:C(p),width:2}};});
+  /* P1: Δu'v' vs θ — split into trusted (solid) and untrusted (dashed gray) regions */
+  const t1=[];
+  phis.forEach(p=>{
+    const d=PROC.filter(r=>r.phi===p).sort((a,b)=>a.theta-b.theta);
+    const yTrust=d.map(r=>isTrusted(r)?r.duv:null);
+    const yUntrust=d.map(r=>isTrusted(r)?null:r.duv);
+    t1.push({x:d.map(r=>r.theta),y:yTrust,name:'φ='+p+'°',mode:'lines',line:{color:C(p),width:2},connectgaps:false});
+    t1.push({x:d.map(r=>r.theta),y:yUntrust,name:'φ='+p+'° (low Y)',mode:'lines',line:{color:C(p),width:1,dash:'dot'},opacity:.35,connectgaps:false,showlegend:false,hoverinfo:'skip'});
+  });
   t1.push({x:[-60,60],y:[.02,.02],name:'Spec 0.02',line:{color:'#f85149',dash:'dot',width:1},showlegend:false});
   Plotly.newPlot('p1',t1,L({xaxis:{title:'θ (°)'},yaxis:{title:"Δu'v'"}}),{responsive:true});
 
@@ -369,22 +415,29 @@ function replot(){
   });
   Plotly.newPlot('p2',t2,L({xaxis:{title:"Δu'",scaleanchor:'y'},yaxis:{title:"Δv'"}}),{responsive:true});
 
-  /* P3: Y/Y₀ with interactive vertical marker */
+  /* P3: Y/Y₀ with interactive vertical marker + log scale + trust threshold line */
+  const useLog=document.getElementById('logY')?.checked;
+  const snrPct=getSnrThreshold()*100;
   const t3=phis.map(p=>{const d=PROC.filter(r=>r.phi===p);
-    return{x:d.map(r=>r.theta),y:d.map(r=>r.Yrel*100),name:'φ='+p+'°',line:{color:C(p),width:2}};});
+    return{x:d.map(r=>r.theta),y:d.map(r=>useLog?Math.max(r.Yrel*100,.01):r.Yrel*100),name:'φ='+p+'°',line:{color:C(p),width:2}};});
   const lamb=Array.from({length:121},(_,i)=>i-60);
   t3.push({x:lamb,y:lamb.map(t=>Math.cos(t*Math.PI/180)*100),name:'Lambertian',line:{color:'#8b949e',dash:'dash',width:1}});
   // Marker readout trace (initially at θ=0)
   const markerTheta=0;
-  const markerPts=phis.map(p=>{const r=PROC.find(x=>x.phi===p&&x.theta===markerTheta);return r?r.Yrel*100:100;});
+  const markerPts=phis.map(p=>{const r=PROC.find(x=>x.phi===p&&x.theta===markerTheta);return r?(useLog?Math.max(r.Yrel*100,.01):r.Yrel*100):100;});
   t3.push({x:phis.map(()=>markerTheta),y:markerPts,name:'Readout',mode:'markers+text',
     text:markerPts.map((v,i)=>'φ'+phis[i]+'°: '+v.toFixed(1)+'%'),textposition:'top right',textfont:{size:8},
     marker:{size:8,color:'#f85149',symbol:'circle'},showlegend:false});
-  const p3layout=L({xaxis:{title:'θ (°)'},yaxis:{title:'Y / Y₀ (%)'},
-    shapes:[{type:'line',x0:markerTheta,x1:markerTheta,y0:0,y1:1,yref:'paper',
-      line:{color:'#f85149',width:1.5,dash:'dash'}}],
-    annotations:[{x:markerTheta,y:1.05,yref:'paper',text:'θ='+markerTheta+'°',showarrow:false,
-      font:{size:10,color:'#f85149'},xanchor:'center'}]});
+  const p3layout=L({xaxis:{title:'θ (°)'},
+    yaxis:{title:'Y / Y₀ (%)',type:useLog?'log':'linear',range:useLog?[Math.log10(.05),Math.log10(120)]:undefined},
+    shapes:[
+      {type:'line',x0:markerTheta,x1:markerTheta,y0:0,y1:1,yref:'paper',line:{color:'#f85149',width:1.5,dash:'dash'}},
+      {type:'line',x0:-60,x1:60,y0:snrPct,y1:snrPct,line:{color:'#8b949e',width:1,dash:'dot'}}
+    ],
+    annotations:[
+      {x:markerTheta,y:1.05,yref:'paper',text:'θ='+markerTheta+'°',showarrow:false,font:{size:10,color:'#f85149'},xanchor:'center'},
+      {x:55,y:snrPct,text:'Trust ≥ '+snrPct+'%',showarrow:false,font:{size:8,color:'#8b949e'},xanchor:'right',yanchor:'bottom'}
+    ]});
   Plotly.newPlot('p3',t3,p3layout,{responsive:true});
   // Drag interaction via click
   document.getElementById('p3').on('plotly_click',function(ev){
@@ -544,21 +597,43 @@ function updateCrossSection(){
 /* ── Stats ── */
 function updateStats(){
   if(!PROC.length)return;
-  const worst=PROC.reduce((p,r)=>r.duv>p.duv?r:p,PROC[0]);
+  const thr=getSnrThreshold();
+  // Worst Δu'v' restricted to trusted region (Y/Y₀ ≥ threshold)
+  const trusted=PROC.filter(isTrusted);
+  const worst=(trusted.length?trusted:PROC).reduce((p,r)=>r.duv>p.duv?r:p,(trusted.length?trusted:PROC)[0]);
   const at45=PROC.filter(r=>Math.abs(r.theta)===45);
   const at60=PROC.filter(r=>Math.abs(r.theta)===60);
   const maxDuv45=at45.length?Math.max(...at45.map(r=>r.duv)):0;
   const maxDuv60=at60.length?Math.max(...at60.map(r=>r.duv)):0;
-  const minYrel60=at60.length?Math.min(...at60.map(r=>r.Yrel)):0;
+
+  // Cutoff θ@50%: smallest |θ| where any phi drops below 50% Y/Y₀
+  const allPhis=[...new Set(PROC.map(r=>r.phi))].sort((a,b)=>a-b);
+  let cutoff=Infinity;
+  allPhis.forEach(phi=>{
+    const g=PROC.filter(r=>r.phi===phi).sort((a,b)=>a.theta-b.theta);
+    for(const r of g){if(r.theta>0&&r.Yrel<.5){cutoff=Math.min(cutoff,r.theta);break;}}
+    for(let i=g.length-1;i>=0;i--){if(g[i].theta<0&&g[i].Yrel<.5){cutoff=Math.min(cutoff,Math.abs(g[i].theta));break;}}
+  });
+  // Effective FOV: max θ range where all selected criteria hold (Y≥50% & Δu'v'≤0.02)
+  let effFov=0;
+  allPhis.forEach(phi=>{
+    const g=PROC.filter(r=>r.phi===phi&&r.Yrel>=.5&&r.duv<=.02);
+    if(g.length){const ts=g.map(r=>r.theta);effFov=Math.max(effFov,Math.max(...ts)-Math.min(...ts));}
+  });
+  // Y-weighted Δu'v' (perceptually relevant — dim regions contribute less)
+  const wSum=PROC.reduce((s,r)=>s+r.Y*r.duv,0);
+  const wNorm=PROC.reduce((s,r)=>s+r.Y,0);
+  const wDuv=wNorm>0?wSum/wNorm:0;
 
   document.getElementById('sMaxDuv').textContent=worst.duv.toFixed(4);
   document.getElementById('sMaxPos').textContent='φ'+worst.phi+'° θ'+worst.theta+'°';
+  document.getElementById('sFov').textContent=effFov?'±'+(effFov/2).toFixed(0)+'°':'—';
+  document.getElementById('sCutoff').textContent=isFinite(cutoff)?'±'+cutoff.toFixed(0)+'°':'>±60°';
+  document.getElementById('sWDuv').textContent=wDuv.toFixed(4);
   document.getElementById('sDuv45').textContent=maxDuv45.toFixed(4);
   document.getElementById('sDuv60').textContent=maxDuv60.toFixed(4);
-  document.getElementById('sYdrop').textContent=((1-minYrel60)*100).toFixed(1)+'%';
 
   // Asymmetry index
-  const allPhis=[...new Set(PROC.map(r=>r.phi))].sort((a,b)=>a-b);
   let maxAsym=0,asymPhi=0;
   allPhis.forEach(phi=>{
     const pos=PROC.filter(r=>r.phi===phi&&r.theta===45);
@@ -566,14 +641,13 @@ function updateStats(){
     if(pos.length&&neg.length){const a=Math.abs(pos[0].duv-neg[0].duv);if(a>maxAsym){maxAsym=a;asymPhi=phi;}}
   });
   document.getElementById('sAsym').textContent=maxAsym.toFixed(4)+(maxAsym>0.002?' ⚠':'');
-  const dxs=PROC.map(r=>r.dx),dys=PROC.map(r=>r.dy);
-  document.getElementById('sDx').textContent=(Math.max(...dxs)-Math.min(...dxs)).toFixed(4);
-  document.getElementById('sDy').textContent=(Math.max(...dys)-Math.min(...dys)).toFixed(4);
 
-  // Spec
+  // Spec — now uses Y-weighted and effective FOV (more meaningful for BM+Lens designs)
+  const minYrel60=at60.length?Math.min(...at60.map(r=>r.Yrel)):0;
   const specs=[
-    {label:"Δu'v' < 0.020 @ ±45°",pass:maxDuv45<.02,val:maxDuv45.toFixed(4)},
-    {label:"Δu'v' < 0.040 @ ±60°",pass:maxDuv60<.04,val:maxDuv60.toFixed(4)},
+    {label:"Δu'v' < 0.020 @ ±45° (trust)",pass:Math.max(...at45.filter(isTrusted).map(r=>r.duv),0)<.02,val:Math.max(...at45.filter(isTrusted).map(r=>r.duv),0).toFixed(4)},
+    {label:"Y-weighted Δu'v' < 0.010",pass:wDuv<.01,val:wDuv.toFixed(4)},
+    {label:"Effective FOV ≥ 30°",pass:effFov>=30,val:'±'+(effFov/2).toFixed(0)+'°'},
     {label:"Y/Y₀ > 50% @ ±60°",pass:minYrel60>.5,val:(minYrel60*100).toFixed(1)+'%'},
   ];
   document.getElementById('specBox').innerHTML=specs.map(s=>
@@ -584,39 +658,43 @@ function updateStats(){
 function updateInsights(){
   if(!PROC.length)return;
   const allPhis=[...new Set(PROC.map(r=>r.phi))].sort((a,b)=>a-b);
-  const worst=PROC.reduce((p,r)=>r.duv>p.duv?r:p,PROC[0]);
+  const thr=getSnrThreshold();
+  const trusted=PROC.filter(isTrusted);
+  const worst=(trusted.length?trusted:PROC).reduce((p,r)=>r.duv>p.duv?r:p,(trusted.length?trusted:PROC)[0]);
+  const untrustRatio=PROC.length?(1-trusted.length/PROC.length)*100:0;
 
-  // Find asymmetric phis
+  // Find asymmetric phis (within trusted region only)
   const asymList=[];
   allPhis.forEach(phi=>{
     const p45=PROC.find(r=>r.phi===phi&&r.theta===45);
     const n45=PROC.find(r=>r.phi===phi&&r.theta===-45);
-    if(p45&&n45&&Math.abs(p45.duv-n45.duv)>0.002) asymList.push({phi,diff:Math.abs(p45.duv-n45.duv)});
+    if(p45&&n45&&isTrusted(p45)&&isTrusted(n45)&&Math.abs(p45.duv-n45.duv)>0.002) asymList.push({phi,diff:Math.abs(p45.duv-n45.duv)});
   });
 
   // Find worst direction
   const worstDir=Math.atan2(worst.dv,worst.du)*180/Math.PI;
 
-  // Dominant shift direction
-  const highAngle=PROC.filter(r=>Math.abs(r.theta)>=40);
-  const avgDu=highAngle.reduce((s,r)=>s+r.du,0)/highAngle.length;
-  const avgDv=highAngle.reduce((s,r)=>s+r.dv,0)/highAngle.length;
+  // Dominant shift direction (trusted high-angle only)
+  const highAngle=trusted.filter(r=>Math.abs(r.theta)>=20);
+  const avgDu=highAngle.length?highAngle.reduce((s,r)=>s+r.du,0)/highAngle.length:0;
+  const avgDv=highAngle.length?highAngle.reduce((s,r)=>s+r.dv,0)/highAngle.length:0;
   const domDir=avgDu>0?(avgDv>0?'+u\'+v\' (yellow shift)':'+u\'-v\' (red shift)'):(avgDv>0?'-u\'+v\' (green shift)':'-u\'-v\' (blue shift)');
 
   let html='<h5>Auto Analysis</h5>';
   if(LANG==='ko'){
-    html+=`<p>• 최대 색 변화 위치: φ=${worst.phi}°, θ=${worst.theta}° (Δu'v'=${worst.duv.toFixed(4)})</p>`;
+    html+=`<p>• <b>신뢰영역</b>(Y/Y₀≥${(thr*100).toFixed(0)}%): 데이터의 ${(100-untrustRatio).toFixed(0)}%</p>`;
+    html+=`<p>• 최대 색 변화 (신뢰): φ=${worst.phi}°, θ=${worst.theta}° (Δu'v'=${worst.duv.toFixed(4)})</p>`;
     html+=`<p>• 색 이동 주 방향: ${domDir} (${worstDir.toFixed(0)}°)</p>`;
     if(asymList.length) html+=`<p>• ⚠ 비대칭 관찰: φ=${asymList.map(a=>a.phi+'°(Δ'+a.diff.toFixed(4)+')').join(', ')}</p>`;
     else html+=`<p>• ✓ 좌우 대칭 양호</p>`;
-    const y60=PROC.filter(r=>Math.abs(r.theta)===60);
-    if(y60.length){const minY=Math.min(...y60.map(r=>r.Yrel));
-      html+=`<p>• 60° 최소 휘도비: ${(minY*100).toFixed(1)}% ${minY<0.5?'⚠ 스펙 초과':'✓'}</p>`;}
+    if(untrustRatio>30) html+=`<p>• 💡 BM+Lens 차단 영역이 ${untrustRatio.toFixed(0)}%. 차단 외 영역의 Δu'v' 진동은 측정 SNR 한계가 주요 원인일 수 있음.</p>`;
   } else {
-    html+=`<p>• Worst shift: φ=${worst.phi}°, θ=${worst.theta}° (Δu'v'=${worst.duv.toFixed(4)})</p>`;
+    html+=`<p>• <b>Trusted region</b> (Y/Y₀≥${(thr*100).toFixed(0)}%): ${(100-untrustRatio).toFixed(0)}% of data</p>`;
+    html+=`<p>• Worst shift (trusted): φ=${worst.phi}°, θ=${worst.theta}° (Δu'v'=${worst.duv.toFixed(4)})</p>`;
     html+=`<p>• Dominant direction: ${domDir} (${worstDir.toFixed(0)}°)</p>`;
     if(asymList.length) html+=`<p>• ⚠ Asymmetry at φ=${asymList.map(a=>a.phi+'°').join(', ')}</p>`;
     else html+=`<p>• ✓ Good symmetry</p>`;
+    if(untrustRatio>30) html+=`<p>• 💡 ${untrustRatio.toFixed(0)}% of measurements in BM+Lens cutoff region. Δu'v' oscillations there likely reflect SNR limits, not real color shift.</p>`;
   }
   document.getElementById('insightBox').innerHTML=html;
 }
