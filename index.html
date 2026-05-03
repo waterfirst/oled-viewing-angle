@@ -166,7 +166,6 @@ const PHI_C={0:'#58a6ff',45:'#f78166',90:'#3fb950',135:'#d2a8ff',180:'#f0883e',2
 let DATA=[],PROC=[],LANG='ko';
 
 /* ── CIE 1976 UCS Spectral Locus (u', v') for 380-700nm ── */
-const CIE1976_GAMUT_UP=[0.2560,0.2## spectral locus data cut for readability];
 /* Full spectral locus in u',v' from 380nm to 700nm (5nm steps) + purple line closure */
 const SPECTRAL_LOCUS=(function(){
   // CIE 1931 xy spectral locus → convert to u'v'
@@ -199,21 +198,28 @@ function toggleTheme(){const h=document.documentElement,t=h.dataset.theme==='dar
 /* ── CSV Parse ── */
 function parseCSV(text){
   const lines=text.trim().split(/\r?\n/).filter(Boolean);
+  if(lines.length<2) throw new Error('데이터가 없습니다 (No data rows)');
   const delim=lines[0].includes('\t')?'\t':lines[0].includes(';')?';':',';
-  const hdr=lines[0].split(delim).map(h=>h.trim().toLowerCase());
-  let iPhi=hdr.indexOf('phi'),iTheta=hdr.indexOf('theta'),ix=hdr.indexOf('x');
-  // Y = first 'y' if before x, or column named 'luminance'/'lum'
-  let iY=hdr.indexOf('luminance'); if(iY<0) iY=hdr.indexOf('lum');
-  let iy=hdr.lastIndexOf('y');
-  if(iY<0){
-    const firstY=hdr.indexOf('y');
-    if(firstY>=0 && firstY<ix){iY=firstY;} else if(firstY===iy){iY=2;iy=4;} else {iY=firstY;}
-  }
+  const hdr=lines[0].split(delim).map(h=>h.trim().toLowerCase().replace(/['"]/g,''));
+  let iPhi=-1,iTheta=-1,iY=-1,ix=-1,iy=-1;
+  hdr.forEach((h,idx)=>{
+    if(h==='phi'||h==='azimuth') iPhi=idx;
+    else if(h==='theta'||h==='angle'||h==='polar') iTheta=idx;
+    else if(h==='x') ix=idx;
+    else if(h==='luminance'||h==='lum'||h==='y_lum') iY=idx;
+    else if(h==='y' && ix>=0) iy=idx;       // y chromaticity (after x)
+    else if(h==='y' && ix<0 && iPhi>=0) iY=idx; // Y luminance (before x)
+  });
+  // Positional fallback for standard 5-column format
   if(iPhi<0){iPhi=0;iTheta=1;iY=2;ix=3;iy=4;}
-  return lines.slice(1).map(l=>{
+  if(iY<0) iY=2;
+  if(iy<0) iy=4;
+  const rows=lines.slice(1).map(l=>{
     const c=l.split(delim).map(s=>parseFloat(s.trim()));
     return{phi:c[iPhi],theta:c[iTheta],Y:c[iY],x:c[ix],y:c[iy]};
-  }).filter(r=>!isNaN(r.phi)&&!isNaN(r.theta)&&!isNaN(r.Y));
+  }).filter(r=>!isNaN(r.phi)&&!isNaN(r.theta)&&!isNaN(r.Y)&&!isNaN(r.x)&&!isNaN(r.y));
+  if(rows.length===0) throw new Error('유효한 데이터 행이 없습니다.\n컬럼 순서: Phi, Theta, Y, x, y');
+  return rows;
 }
 
 /* ── CIE ── */
@@ -242,13 +248,25 @@ function loadData(rows,label){
   replot();
 }
 
-function loadFile(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{loadData(parseCSV(ev.target.result),'📂 '+f.name)}catch(err){alert(err)}};r.readAsText(f);}
+function loadFile(e){
+  const f=e.target.files[0];if(!f)return;
+  const info=document.getElementById('dataInfo');
+  info.textContent='읽는 중...';
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{loadData(parseCSV(ev.target.result),'📂 '+f.name);}
+    catch(err){info.textContent='❌ '+err.message;alert('파싱 오류: '+err.message);}
+  };
+  r.onerror=()=>{info.textContent='❌ 파일 읽기 실패';};
+  r.readAsText(f);
+}
 function loadRemoteCSV(){
-  document.getElementById('dataInfo').textContent='Loading...';
+  const info=document.getElementById('dataInfo');
+  info.textContent='Loading...';
   fetch('https://raw.githubusercontent.com/waterfirst/oled-viewing-angle/master/data.csv')
-    .then(r=>{if(!r.ok)throw new Error(r.status);return r.text()})
-    .then(t=>loadData(parseCSV(t),'GitHub data.csv'))
-    .catch(e=>{document.getElementById('dataInfo').textContent='❌ '+e.message;});
+    .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.text();})
+    .then(t=>{try{loadData(parseCSV(t),'GitHub data.csv');}catch(err){info.textContent='❌ '+err.message;}})
+    .catch(e=>{info.textContent='❌ '+e.message;});
 }
 function useSample(){
   const rows=[];
